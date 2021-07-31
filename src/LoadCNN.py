@@ -45,7 +45,7 @@ def HelpPrinterLoad():
     print("\n")
     print("CNN load settings:")
     print("Provide the path to the model, including the model name")
-    print("\t-n: model path + name (string) (def: tempModel)")
+    print("\t-n: model path + name (string) (def: NULL)")
     print("\n")
     print("Bitmap generation settings:")
     print("The following settings consider the generation of each bitmap/image.")
@@ -135,7 +135,7 @@ def main(argv):
     extractionPoint = '500000'
     multiplication = '1000000'
     # CNN load settings
-    model = 'tempModel'
+    model = 'NULL'
     # Post processing settings
     logPost = 'NULL'
     logPrePost = 'NULL'
@@ -245,6 +245,12 @@ def main(argv):
         and int(endMssel) == 0 and len(rawFilesPath) == 0) or 
         (int(startMs) > int(endMs) or int(startMssel) > int(endMssel))):
         print("ERROR: Not enough data to perform inference")
+        HelpPrinterLoad()
+        sys.exit(1)
+    
+    # model not specified
+    if (str(model) == "NULL"):
+        print("ERROR: Model not specified")
         HelpPrinterLoad()
         sys.exit(1)
     

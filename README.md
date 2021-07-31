@@ -130,9 +130,9 @@ The postLog files: entry starting position, entry end position, average entry po
 ```
 for the summary file, the entry with the highest probability of selection is taken of every postLog file.  
 ```bash
-The summary files: entry starting position, entry end position, average entry position, probability neutrality, probability selection, number of points used in averaging    
-The other files in the info folder are self-explanatory.  
+The summary files: entry starting position, entry end position, average entry position, probability neutrality, probability selection, number of points per average    
 ```
+The other files in the info folder are self-explanatory.  
 ## Get metrics success rate, distance error, and TPR
 Go to the root of the ASDEC repository.
 Lastly to calculate the success rate, distance error:

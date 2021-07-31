@@ -74,7 +74,7 @@ def HelpPrinterTrain():
     print("a given model based on a model design.")
     print("\t-n: batch size (int) (def: 1)")
     print("\t-o: amount of epochs (int) (def: 10)")
-    print("\t-p: output path + model name (string) (def: ModelDesignC3F32EL1S32_)")
+    print("\t-p: output path + model name (string) (def: tempModel)")
     print("\t\t--force: save even if model is already present (bool) (def: false)")
     print("\n")
     print("Advanced settings !Please use with caution!:")
@@ -88,7 +88,7 @@ def HelpPrinterTrain():
     print("In both these subfolders only .txt files in the ms/mssel format")
     print("should be present.")
     print("\t-q: name of py file where the required model is defined\n" +
-          "\t(string) (def: originalModel)")
+          "\t(string) (def: ModelDesignC3F32EL1S32_)")
     print("\t-t: get raw files path (string) (def: NULL)")
     print("\n")
     print("General settings:")

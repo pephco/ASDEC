@@ -388,7 +388,7 @@ class GridSize(PostProcessing):
             # check if the first value falls in the range
             if self.logfileData[idx, 0] < value - self.maxDist or \
                     self.logfileData[idx, 1] > value + self.maxDist:
-                print("WARNING: First point already outside of range")
+                # print("WARNING: First point already outside of range")
                 firstPos = self.logfileData[idx, 0]
                 lastPos = self.logfileData[idx, 1]
             else:

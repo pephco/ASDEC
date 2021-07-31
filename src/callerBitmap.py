@@ -28,6 +28,7 @@ import subprocess
 from logic import bitmapConverter
 from logic import str2bool
 from logic import logo
+from logic import vcfConversion
 ### time ###
 importTime = time.time() - startTime
 startTime = time.time()
@@ -203,17 +204,7 @@ def main(argv):
     ############################################################################
     # If the file is in the vcf format call the RAiSD parser
     ############################################################################
-    if ".vcf" in inputfile:
-        subprocess.call(shlex.split('./RAiSD_Parser/RAiSD' +
-                                    ' -n ' + 'test_run' +
-                                    ' -I ' + str(inputfile) +
-                                    ' -L ' + str(mulPos) +
-                                    ' -Q ' + str(memorySize) + 
-                                    ' -f '))
-        inputfile = inputfile + ".ms"
-        # delete the logfiles of RAiSD
-        subprocess.call(shlex.split('rm RAiSD_Info.test_run'))
-        subprocess.call(shlex.split('rm RAiSD_Report.test_run'))
+    vcfConversion.vcfConversion(inputfile, mulPos, memorySize)
     
     ############################################################################
     # call the code which really does the work

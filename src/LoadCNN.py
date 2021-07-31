@@ -31,6 +31,7 @@ from logic import randomGenerator
 import callerPostProcessing
 from logic import str2bool
 from logic import logo
+from logic import vcfConversion
 # endregion
 
 
@@ -245,13 +246,17 @@ def main(argv):
         and int(endMssel) == 0 and len(rawFilesPath) == 0) or 
         (int(startMs) > int(endMs) or int(startMssel) > int(endMssel))):
         print("ERROR: Not enough data to perform inference")
-        HelpPrinterLoad()
         sys.exit(1)
     
     # model not specified
     if (str(model) == "NULL"):
         print("ERROR: Model not specified")
-        HelpPrinterLoad()
+        sys.exit(1)
+        
+    # nothing is being saved
+    if (str(logPrePost) == "NULL" and str(logSummary) == "NULL" 
+        and str(logPost) == "NULL"):
+        print("ERROR: No saving location given")
         sys.exit(1)
     
     # check if search mode items are used without search mode enabled
@@ -373,93 +378,112 @@ def main(argv):
         startTime = time.time()
         ############
     ########################################################################
-    with os.scandir(str(rawFilesPath)) as folder:
-        i = 0
-        for subfolder in folder:
-            if subfolder.is_dir():
-                with os.scandir(str(subfolder.path)) as content:
-                    for file in content:
-                        if file.is_file():
-                            print("\n------STARTED RUNNING " + file.name + "------\n")
-                            # read the first line of the file to get some information
-                            openfile = open(file.path, 'r')
-                            for lineIndex, line in enumerate(openfile):
-                                if lineIndex == 0:
-                                    fileInformation = [
-                                        int(lineIndex) for lineIndex in line.split() if
-                                        lineIndex.isdigit()]
-                                    if (line.find('mbs') != -1):
-                                        numberOfPopulations = fileInformation[len(fileInformation)-1]
-                                    elif (line.find('ms') != -1 or line.find('mssel') != -1 or line.find('msHOT') != -1 ):
-                                        numberOfPopulations = fileInformation[1]
-                                    else:
-                                        print("not supproted software package")
-                                        return
-                                    break
-                            openfile.close()
-                            # set the amount of populations based on the file
-                            # information.
-                            # numberOfPopulations = int(fileInformation[1])
-                            # if the amount of individuals is different in the
-                            # file from the amount used by the model training
-                            # the image size is not equal and not possible
-                            if (int(individuals) != int(fileInformation[0])):
-                                print("ERROR: Amount of individuals not correct")
-                                sys.exit(1)
-                            # check thread settings
-                            tempThreads = threads
-                            print("check if thread set are valid")
-                            if (tempThreads > numberOfPopulations):
-                                tempThreads = numberOfPopulations
-                            while ((numberOfPopulations % tempThreads) != 0):
-                                tempThreads -= 1.0
-                                print("selected thread count is not valid threads -1")
-                            print("final thread count: " + str(tempThreads))
-                            # call the generate script which handles all parallel parts
-                            # generate the bitmaps and input the bitmaps into a CNN
-                            subprocess.call(shlex.split(
-                                './src/scripts/pipelineLoad.sh' +
-                                ' -a ' + str(int(tempThreads)) +
-                                ' -b ' + file.path +
-                                ' -c ' + file.name + '_IMAGE_' + str(i) +
-                                ' -d ' + str(windowEnb) +
-                                ' -e ' + str(windowLength) +
-                                ' -f ' + str(stepSize) +
-                                ' -g ' + str(centerEnb) +
-                                ' -i ' + str(centerRange) +
-                                ' -j ' + str(multiplication) +
-                                ' -k ' + str(model) +
-                                ' -l ' + str(individuals) +
-                                ' -m ' + '_' + file.name[:-4] + '_' +
-                                ' -n ' + str(numberOfPopulations) +
-                                ' -o ' + str(folderName) +
-                                ' -p ' + str(logPost) +
-                                ' -q ' + str(mode) +
-                                ' -r ' + str(parama) +
-                                ' -s ' + str(paramb) +
-                                ' -t ' + str(logSummary) +
-                                ' -u ' + str(stepsPerThread) +
-                                ' -x ' + str(logPrePost) + 
-                                ' -y ' + str(extractionPoint) +
-                                ' -z ' + str(memorySize)))
+    filesToRun = []
+    if ("." in rawFilesPath):
+        filesToRun.append(str(rawFilesPath))
+        print("here")
+    else:
+        with os.scandir(str(rawFilesPath)) as folder:
+            for subfolder in folder:
+                if subfolder.is_dir():
+                    with os.scandir(str(subfolder.path)) as content:
+                        for file in content:
+                            if file.is_file():
+                                filesToRun.append(str(file.path))
+                elif subfolder.is_file():
+                    filesToRun.append(str(subfolder.path))
+    if (len(filesToRun) == 0):
+        print("ERROR: No files to run")
+        sys.exit(1)
+    
+    i = 0
+    print(filesToRun)
+    for filesFound in filesToRun:
+        if vcfConversion.vcfConversion(rawFilesPath, multiplication, memorySize):
+            filesFound = filesFound + ".ms"
+        fileName = filesFound
+        while True:
+            if (not "/" in fileName):
+                break
+            fileName = fileName.split("/",1)[-1]
+        print("\n------STARTED RUNNING " + fileName + "------\n")
+        # read the first line of the file to get some information
+        openfile = open(filesFound, 'r')
+        for lineIndex, line in enumerate(openfile):
+            if lineIndex == 0:
+                fileInformation = [
+                    int(lineIndex) for lineIndex in line.split() if
+                    lineIndex.isdigit()]
+                if (line.find('mbs') != -1):
+                    numberOfPopulations = fileInformation[len(fileInformation)-1]
+                elif (line.find('ms') != -1 or line.find('mssel') != -1 or line.find('msHOT') != -1 ):
+                    numberOfPopulations = fileInformation[1]
+                else:
+                    print("not supported software package")
+                    return
+                break
+        openfile.close()
+        # set the amount of populations based on the file
+        # information.
+        # numberOfPopulations = int(fileInformation[1])
+        # if the amount of individuals is different in the
+        # file from the amount used by the model training
+        # the image size is not equal and not possible
+        if (int(individuals) != int(fileInformation[0])):
+            print("ERROR: Amount of individuals not correct")
+            sys.exit(1)
+        # check thread settings
+        tempThreads = threads
+        print("check if thread set are valid")
+        if (tempThreads > numberOfPopulations):
+            tempThreads = numberOfPopulations
+        while ((numberOfPopulations % tempThreads) != 0):
+            tempThreads -= 1.0
+            print("selected thread count is not valid threads -1")
+        print("final thread count: " + str(tempThreads))
+        # call the generate script which handles all parallel parts
+        # generate the bitmaps and input the bitmaps into a CNN
+        subprocess.call(shlex.split(
+            './src/scripts/pipelineLoad.sh' +
+            ' -a ' + str(int(tempThreads)) +
+            ' -b ' + filesFound +
+            ' -c ' + fileName + '_IMAGE_' + str(i) +
+            ' -d ' + str(windowEnb) +
+            ' -e ' + str(windowLength) +
+            ' -f ' + str(stepSize) +
+            ' -g ' + str(centerEnb) +
+            ' -i ' + str(centerRange) +
+            ' -j ' + str(multiplication) +
+            ' -k ' + str(model) +
+            ' -l ' + str(individuals) +
+            ' -m ' + '_' + fileName[:-4] + '_' +
+            ' -n ' + str(numberOfPopulations) +
+            ' -o ' + str(folderName) +
+            ' -p ' + str(logPost) +
+            ' -q ' + str(mode) +
+            ' -r ' + str(parama) +
+            ' -s ' + str(paramb) +
+            ' -t ' + str(logSummary) +
+            ' -u ' + str(stepsPerThread) +
+            ' -x ' + str(logPrePost) + 
+            ' -y ' + str(extractionPoint) +
+            ' -z ' + str(memorySize)))
 
-                            if(logSummary != "NULL"):
-                                ### time ###
-                                timeProcess = time.time() - startTime
-                                # start a new timer to determine the time took for writing
-                                startTime = time.time()
-                                # from this point on it will be appended to the existing file
-                                with open((logSummary + 'info/TimeOverview.txt'), 'a') as f:
-                                    with redirect_stdout(f):
-                                        print(str(file.name) + " number " + str(i) + " full process--------:\t%.5f" %
-                                              timeProcess)
-                                        print("Write time to file------------:\t%.5f" %
-                                              (time.time() - startTime))
-                                startTime = time.time()
-                                ############
-                            i += 1
-        if (i == 0):
-            print("WARNING: No txt files found do you have the subfolder neutral under the given path")
+        if(logSummary != "NULL"):
+            ### time ###
+            timeProcess = time.time() - startTime
+            # start a new timer to determine the time took for writing
+            startTime = time.time()
+            # from this point on it will be appended to the existing file
+            with open((logSummary + 'info/TimeOverview.txt'), 'a') as f:
+                with redirect_stdout(f):
+                    print(str(fileName) + " number " + str(i) + " full process--------:\t%.5f" %
+                          timeProcess)
+                    print("Write time to file------------:\t%.5f" %
+                          (time.time() - startTime))
+            startTime = time.time()
+            ############
+        i += 1
 
     ########################################################################
     # Perform the cleanup

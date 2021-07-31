@@ -3,8 +3,8 @@
 # File:			randomGenerator.py
 # Organization:	University of twente
 # Group:		CAES
-# Date:			26-03-2021
-# Version:		0.0.1
+# Date:			31-07-2021
+# Version:		1.0.0
 # Author:		Matthijs Souilljee, s2211246
 # Education:	EMSYS msc.
 ############################################################################

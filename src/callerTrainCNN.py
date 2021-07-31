@@ -3,8 +3,8 @@
 # File:			callerTrainCNN.py
 # Organization:	University of twente
 # Group:		CAES
-# Date:			21-04-2021
-# Version:		0.5.0
+# Date:			31-07-2021
+# Version:		1.0.0
 # Author:		Matthijs Souilljee, s2211246
 # Education:	EMSYS msc.
 ############################################################################
@@ -20,6 +20,7 @@ import getopt
 
 # import my own files
 from logic import CNN
+from logic import logo
 # endregion
 
 
@@ -30,6 +31,7 @@ from logic import CNN
 
 
 def helpPrinterCNN():
+    logo.logo()
     print("callerTrainCNN.py -m <model> -d <directory> -y <imgHeight> -x <imgWidth> -b" +
           " <batchSize> -a <modelDesign>")
     print("\t -h: help option")

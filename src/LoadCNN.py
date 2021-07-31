@@ -3,8 +3,8 @@
 # File:			LoadCNN.py
 # Organization:	University of twente
 # Group:		CAES
-# Date:			21-04-2021
-# Version:		0.5.0
+# Date:			31-07-2021
+# Version:		1.0.0
 # Author:		Matthijs Souilljee, s2211246
 # Education:	EMSYS msc.
 ############################################################################
@@ -30,11 +30,12 @@ import callerLoadCNN
 from logic import randomGenerator
 import callerPostProcessing
 from logic import str2bool
+from logic import logo
 # endregion
 
 
 def HelpPrinterLoad():
-    print("\n")
+    logo.logo()
     print("LoadCNN.py")
     print("Handles the complete loading of the model inclduing the generation")
     print("of the ms and mssel files. This program provides a complete repoducing")
@@ -79,6 +80,7 @@ def HelpPrinterLoad():
     print("\t-u: Perform cleanup (bool) (def: false)")
     print("\t-v: amount of steps done per thread (def: 5)")
     print("\t-w: get raw files path (string) (def: NULL)")
+    print("\t-z: parsing vcf file memory consumption (input * 2) (float) (def: 10)")
     print("\n")
     print("\n")
     print("!The following options are for advanced users only and enables search mode!")
@@ -148,13 +150,14 @@ def main(argv):
     rawFilesPath = ''
     search = False
     setSearchParameter = False
+    memorySize = '10'
 
     ########################################################################
     # get all the arguments from the commandline
     ########################################################################
     try:
         opts, ars = getopt.getopt(argv,
-                                  "ha:b:c:d:e:f:g:i:j:k:l:m:n:o:p:q:r:s:t:u:v:w:x:y:", 
+                                  "ha:b:c:d:e:f:g:i:j:k:l:m:n:o:p:q:r:s:t:u:v:w:x:y:z:", 
                                   ["search"])
     except getoptError:
         HelpPrinterLoad()
@@ -225,6 +228,8 @@ def main(argv):
             stepsPerThread = arg
         elif opt in ("-w"):
             rawFilesPath = arg
+        elif opt in ("-z"):
+            memorySize = arg
         elif opt in ("--search"):
             search = True
         
@@ -429,7 +434,8 @@ def main(argv):
                                 ' -t ' + str(logSummary) +
                                 ' -u ' + str(stepsPerThread) +
                                 ' -x ' + str(logPrePost) + 
-                                ' -y ' + str(extractionPoint)))
+                                ' -y ' + str(extractionPoint) +
+                                ' -z ' + str(memorySize)))
 
                             if(logSummary != "NULL"):
                                 ### time ###
@@ -503,6 +509,7 @@ def main(argv):
                 print("-w " + str(rawFilesPath))
                 print("-x " + str(logPrePost))
                 print("-y " + str(extractionPoint))
+                print("-z " + str(memorySize))
                 if search:
                     print("--search")
     print("completed running all scripts")

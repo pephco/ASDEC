@@ -3,8 +3,8 @@
 # File:			callerPostProcessing.py
 # Organization:	University of twente
 # Group:		CAES
-# Date:			21-04-2021
-# Version:		0.5.0
+# Date:			31-07-2021
+# Version:		1.0.0
 # Author:		Matthijs Souilljee, s2211246
 # Education:	EMSYS msc.
 ############################################################################
@@ -24,6 +24,7 @@ from contextlib import redirect_stdout
 
 # import my own files
 from logic import PostProcessing
+from logic import logo
 ### time ###
 importTime = time.time() - startTime
 startTime = time.time()
@@ -37,6 +38,7 @@ startTime = time.time()
 
 
 def helpPrinterPost():
+    logo.logo()
     print("callerPostProcessing.py -m <mode>" +
           " -i <inputdirectory> -o <outputdirectory>" +
           " -s <outputdirectorysummary>" +

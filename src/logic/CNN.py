@@ -2,8 +2,8 @@
 # File:			    CNN.py
 # Organization:		University of twente
 # Group:		    CAES
-# Date:			    21-04-2021
-# Version:		    0.5.0
+# Date:			    31-07-2021
+# Version:		    1.0.0
 # Author:		    Matthijs Souilljee, s2211246
 # Education:	  	EMSYS msc.
 ############################################################################

@@ -20,10 +20,11 @@ helpFunction()
     echo "-t directory save summary files + info -u steps per thread"
 	echo "-x directory save pre post log files"
 	echo "-y extraction position"
+	echo "-z memory reguirement vcf parser"
     exit 1
 }
 
-while getopts "ha:b:c:d:e:f:g:i:j:k:l:m:n:o:p:q:r:s:t:u:x:y:" flag
+while getopts "ha:b:c:d:e:f:g:i:j:k:l:m:n:o:p:q:r:s:t:u:x:y:z:" flag
 do
     case "${flag}" in
         a) thread=${OPTARG};;
@@ -48,12 +49,13 @@ do
         u) stepsPerThread=${OPTARG};;
 		x) logPrePost=${OPTARG};;
 		y) extractionPoint=${OPTARG};;
+		z) memorySize=${OPTARG};;
         h) helpFunction ;;
         ?) helpFunction ;;
     esac
 done
 
-if [ -z "$thread" ] || [ -z "$inMsMssel" ] || [ -z "$imageName" ] || [ -z "$windowEnb" ] || [ -z "$windowSize" ] || [ -z "$stepSize" ] || [ -z "$centerEnb" ] || [ -z "$centerOff" ] || [ -z "$multiplication" ] || [ -z "$model" ] || [ -z "$windowHeight" ] || [ -z "$outlog" ] || [ -z "$numberOfPopulations" ] || [ -z "$folderName" ] || [ -z "$savePost" ] || [ -z "$postMode" ] || [ -z "$parama" ] || [ -z "$paramb" ] || [ -z "$saveSummary" ] || [ -z "$stepsPerThread" ] || [ -z "$logPrePost" ] || [ -z "$extractionPoint" ]
+if [ -z "$thread" ] || [ -z "$inMsMssel" ] || [ -z "$imageName" ] || [ -z "$windowEnb" ] || [ -z "$windowSize" ] || [ -z "$stepSize" ] || [ -z "$centerEnb" ] || [ -z "$centerOff" ] || [ -z "$multiplication" ] || [ -z "$model" ] || [ -z "$windowHeight" ] || [ -z "$outlog" ] || [ -z "$numberOfPopulations" ] || [ -z "$folderName" ] || [ -z "$savePost" ] || [ -z "$postMode" ] || [ -z "$parama" ] || [ -z "$paramb" ] || [ -z "$saveSummary" ] || [ -z "$stepsPerThread" ] || [ -z "$logPrePost" ] || [ -z "$extractionPoint" ] || [ -z " memorySize" ]
 then
     echo "Some or all of the parameters are empty";
     helpFunction
@@ -88,7 +90,8 @@ do
     -u $saveSummary \
     -v $stepsPerThread \
 	-x $logPrePost \
-	-y $extractionPoint&
+	-y $extractionPoint \
+	-z $memorySize&
 done
 wait
 

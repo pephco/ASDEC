@@ -3,8 +3,8 @@
 # File:			callerLoadCNN.py
 # Organization:	University of twente
 # Group:		CAES
-# Date:			21-04-2021
-# Version:		0.5.0
+# Date:			31-07-2021
+# Version:		1.0.0
 # Author:		Matthijs Souilljee, s2211246
 # Education:	EMSYS msc.
 ############################################################################
@@ -22,6 +22,7 @@ from logic import CNN
 from contextlib import redirect_stdout
 import getopt
 import sys
+from logic import logo
 # import my own files
 ### time ###
 importTime = time.time() - startTime
@@ -37,6 +38,7 @@ startTime = time.time()
 
 
 def helpPrinterCNN():
+    logo.logo()
     print("callerLoadCNN.py -m <model> -d <directory> -o <outDirectory")
     print("\t -m, --model: path to model including model name")
     print("\t -d, --directory: directory filled with images to classify")

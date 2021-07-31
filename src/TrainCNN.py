@@ -3,8 +3,8 @@
 # File:			TrainCNN.py
 # Organization:	University of twente
 # Group:		CAES
-# Date:			21-04-2021
-# Version:		0.5.0
+# Date:			31-07-2021
+# Version:		1.0.0
 # Author:		Matthijs Souilljee, s2211246
 # Education:	EMSYS msc.
 ############################################################################
@@ -32,11 +32,12 @@ import callerBitmap
 import callerTrainCNN
 from logic import randomGenerator
 from logic import str2bool
+from logic import logo
 # endregion
 
 
 def HelpPrinterTrain():
-    print("\n")
+    logo.logo()
     print("TrainCNN.py")
     print("Handles the complete training of the model including the generation")
     print("of the ms and mssel files. This program provides a complete repoducing")
@@ -93,6 +94,7 @@ def HelpPrinterTrain():
     print("\n")
     print("General settings:")
     print("\t-r: Perform cleanup (bool) (def: true)")
+    print("\t-x: parsing vcf file memory consumption (input * 2) (float) (def: 10)")
     print("\n")
     print("Extra training settings:")
     print("These specify a maximal loss and mininal acc, used for rapid")
@@ -133,6 +135,7 @@ def main(argv):
     # general settings
     deleteWhenDone = 'true'
     rawFilesPath = ''
+    memorySize = '10'
     force = False
     # extra training settings
     minAcc = 0
@@ -144,7 +147,7 @@ def main(argv):
     ########################################################################
     try:
         opts, ars = getopt.getopt(argv,
-                                  "ha:b:c:d:e:f:g:i:j:k:l:m:n:o:p:q:r:t:u:v:w:y:",
+                                  "ha:b:c:d:e:f:g:i:j:k:l:m:n:o:p:q:r:t:u:v:w:y:x:",
                                   ["force"])
     except getoptError:
         HelpPrinterTrain()
@@ -197,6 +200,8 @@ def main(argv):
             triesCount = int(arg)
         elif opt in ("-y"):
             extractionPoint = arg
+        elif opt in ("-x"):
+            memorySize = arg
         elif opt in ("--force"):
             force = True
     
@@ -303,7 +308,8 @@ def main(argv):
                                '-c' + str(centerEnb),
                                '-z' + str(centerRange),
                                '-m' + str(multiplication),
-                               '-p' + str(extractionPoint)])
+                               '-p' + str(extractionPoint),
+                               '-x' + str(memorySize)])
                 i += 1
         if (i == 0):
             print("WARNING: No txt files found do you have the subfolder neutral under the given path")
@@ -328,7 +334,8 @@ def main(argv):
                                '-c' + str(centerEnb),
                                '-z' + str(centerRange),
                                '-m' + str(multiplication),
-                               '-p' + str(extractionPoint)])
+                               '-p' + str(extractionPoint),
+                               '-x' + str(memorySize)])
                 i += 1
         if (i == 0):
             print("WARNING: No txt files found do you have the subfolder selection under the given path")
@@ -417,6 +424,7 @@ def main(argv):
             print("-r " + str(deleteWhenDone))
             print("-t " + str(rawFilesPath))
             print("-y " + str(extractionPoint))
+            print("-x " + str(memorySize))
             if force:
                 print("--force")
 

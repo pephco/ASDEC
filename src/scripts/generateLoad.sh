@@ -19,11 +19,13 @@ helpFunction()
     echo "-r mode post -s param a post -t param b post"
     echo "-u directory save summary files -v steps per thread"
 	echo "-x directory save pre post log files"
+	echo "-y extraction point in position"
+	echo "-z memory reguirement vcf parser"
     echo ""
 
 }
 
-while getopts "ha:b:c:d:e:f:g:i:j:k:l:m:n:o:p:q:r:s:t:u:v:x:y:" flag
+while getopts "ha:b:c:d:e:f:g:i:j:k:l:m:n:o:p:q:r:s:t:u:v:x:y:z:" flag
 do
     case "${flag}" in
         a) thread=${OPTARG};;
@@ -49,12 +51,13 @@ do
         v) stepsPerThread=${OPTARG};;
 		x) logPrePost=${OPTARG};;
 		y) extractionPoint=${OPTARG};;
+		z) memorySize=${OPTARG};;
         h) helpFunction ;;
         ?) helpFunction ;;
     esac
 done
 
-if [ -z "$thread" ] || [ -z "$start" ] || [ -z "$end" ] || [ -z "$inMsMssel" ] || [ -z "$imageName" ] || [ -z "$windowEnb" ] || [ -z "$windowSize" ] || [ -z "$stepSize" ] || [ -z "$centerEnb" ] || [ -z "$centerOff" ] || [ -z "$multiplication" ] || [ -z "$model" ] || [ -z "$imageHeight" ] || [ -z "$outlog" ] || [ -z "$folderName" ] || [ -z "$savePost" ] || [ -z "$postMode" ] || [ -z "$parama" ] || [ -z "$paramb" ] || [ -z "$saveSummary" ] || [ -z "$stepsPerThread" ] || [ -z "$logPrePost" ] || [ -z "$extractionPoint" ]
+if [ -z "$thread" ] || [ -z "$start" ] || [ -z "$end" ] || [ -z "$inMsMssel" ] || [ -z "$imageName" ] || [ -z "$windowEnb" ] || [ -z "$windowSize" ] || [ -z "$stepSize" ] || [ -z "$centerEnb" ] || [ -z "$centerOff" ] || [ -z "$multiplication" ] || [ -z "$model" ] || [ -z "$imageHeight" ] || [ -z "$outlog" ] || [ -z "$folderName" ] || [ -z "$savePost" ] || [ -z "$postMode" ] || [ -z "$parama" ] || [ -z "$paramb" ] || [ -z "$saveSummary" ] || [ -z "$stepsPerThread" ] || [ -z "$logPrePost" ] || [ -z "$extractionPoint" ] || [ -z " memorySize" ]
 then
     echo "Some or all of the parameters are empty";
     helpFunction
@@ -71,7 +74,7 @@ do
     fi
     echo "itteration number: $number"
     rsync -a --delete $folderName/blank/ $folderName/unknown$thread/
-    python3 src/callerBitmap.py -i $inMsMssel -o $folderName/unknown$thread/$imageName -w $windowEnb -s $stepSize -l $windowSize -c $centerEnb -z $centerOff -m $multiplication -a $number -e $jump -v "${saveSummary}/info/threadTime_$thread.txt" -p $extractionPoint
+    python3 src/callerBitmap.py -i $inMsMssel -o $folderName/unknown$thread/$imageName -w $windowEnb -s $stepSize -l $windowSize -c $centerEnb -z $centerOff -m $multiplication -a $number -e $jump -v "${saveSummary}/info/threadTime_$thread.txt" -p $extractionPoint -x $memorySize
     
     rsync -a --delete $folderName/blank/ $folderName/log$thread/
     python3 src/callerLoadCNN.py -m $model -d $folderName/unknown$thread/ -o $folderName/log$thread/logTraj$outlog -v "${saveSummary}/info/threadTime_$thread.txt" 

@@ -2,12 +2,12 @@
 # File:			ModelDesignA.py
 # Organization:	University of twente
 # Group:		CAES
-# Date:			21-04-2021
-# Version:		0.0.1
+# Date:			31-07-2021
+# Version:		1.0.0
 # Author:		Matthijs Souilljee, s2211246
 # Education:	EMSYS msc.
 ############################################################################
-# Model design based on some ideas
+# SweepNet
 ############################################################################
 
 # region import packages

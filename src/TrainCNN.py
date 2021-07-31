@@ -1,0 +1,447 @@
+#!/usr/bin/python
+############################################################################
+# File:			TrainCNN.py
+# Organization:	University of twente
+# Group:		CAES
+# Date:			21-04-2021
+# Version:		0.5.0
+# Author:		Matthijs Souilljee, s2211246
+# Education:	EMSYS msc.
+############################################################################
+# Handles the complete training of the model including the generation
+# of the ms and mssel files. This program provides a complete repoducing
+# environment. Please ensure for correct working that there exists a folder
+# trajectory_files which includes all needed trajectory_files. These are
+# not included in the git repo due to the size.
+############################################################################
+
+# region import packages
+import sys
+import getopt
+import subprocess
+import shlex
+import random
+from contextlib import redirect_stdout
+import time
+import os
+import numpy as np
+import re
+
+# import my own files
+import callerBitmap
+import callerTrainCNN
+from logic import randomGenerator
+from logic import str2bool
+# endregion
+
+
+def HelpPrinterTrain():
+    print("\n")
+    print("TrainCNN.py")
+    print("Handles the complete training of the model including the generation")
+    print("of the ms and mssel files. This program provides a complete repoducing")
+    print("environment. Please ensure for correct working that there exists a folder")
+    print("trajectory_files which includes all needed trajectory_files. These are")
+    print("not included in the git repo due to the size or give the path to your own files.")
+    print("\n")
+    print("Settings for ms/mssel generation:")
+    print("Options for automatic generation of ms/mssel data, if data in the")
+    print("ms/mssel format is already present. Please use the -w flag and")
+    print("the: -a, -b, -c, -d, -e, -f flags can be left unused.")
+    print("\t-a: start ms simulation (int) (def: 0)")
+    print("\t-b: end ms simulation included (int) (def: 0)")
+    print("\t-c: start mssel simulation (int) (def: 0)")
+    print("\t-d: end mssel simulation included (int) (def: 0)")
+    print("\t-e: number of populations per ms/mssel file (int) (def: 1)")
+    print("\t-f: number of individuals per population ms/mssel file (int) (def: 20)")
+    print("\n")
+    print("Bitmap generation settings:")
+    print("The following settings consider the generation of each bitmap/image.")
+    print("Please note that all settings are represented by snips/pixels.")
+    print("extraction mode can be used to only take a subset of a given snips in the extraction,")
+    print("with a given range (value is a single direction in snips).")
+    print("Note that under normal use the -g and -k flags true and work together.")
+    print("\t-g: enable window mode (bool) (def: true)")
+    print("\t\t-i: window length/size (int) (def: 50)")
+    print("\t\t-j: step between windows (int) (def: 1)")
+    print("\t-k: enable extraction mode (bool) (def: true)")
+    print("\t\t-y: position for extraction mode (float) (def: 500000)")
+    print("\t\t-l: range for extraction mode (int) (def: 50)")
+    print("\t-m: multiplication factor position (float) (def: 1)")
+    print("\n")
+    print("CNN train settings:")
+    print("The following settings consider all settings possible for training of")
+    print("a given model based on a model design.")
+    print("\t-n: batch size (int) (def: 1)")
+    print("\t-o: amount of epochs (int) (def: 10)")
+    print("\t-p: output path + model name (string) (def: tempModel)")
+    print("\t\t--force: save even if model is already present (bool) (def: false)")
+    print("\n")
+    print("Advanced settings !Please use with caution!:")
+    print("Two advanced options are available -q considers model designs.")
+    print("These designs are located in the /src/models folder please do not")
+    print("specify the path to a given model and do not create sub-folders in")
+    print("this folder. Only provide the name of the model design in the")
+    print("/src/models folder without .py exstension.")
+    print("For the -t flag please specify a path where under that path two")
+    print("subfolders are located called neutral and selection.")
+    print("In both these subfolders only .txt files in the ms/mssel format")
+    print("should be present.")
+    print("\t-q: name of py file where the required model is defined\n" +
+          "\t(string) (def: originalModel)")
+    print("\t-t: get raw files path (string) (def: NULL)")
+    print("\n")
+    print("General settings:")
+    print("\t-r: Perform cleanup (bool) (def: true)")
+    print("\n")
+    print("Extra training settings:")
+    print("These specify a maximal loss and mininal acc, used for rapid")
+    print("retraining")
+    print("\t-u: minimal accuracy (float) (def: 0)")
+    print("\t-v: maximal loss (float) (def: infinite)")
+    print("\t-w: amount of tries (int) (def: 1)")
+    
+
+
+def main(argv):
+    ########################################################################
+    # initialize some empty variables to store the values
+    # even when no values are assigned easy to see that
+    # no values where assigned
+    ########################################################################
+    # ms and mssel generation settings
+    startMs = '0'
+    endMs = '0'
+    startMssel = '0'
+    endMssel = '0'
+    numberOfPopulations = '1'
+    individuals = '20'
+    # bitmap generation settings
+    windowEnb = 'true'
+    windowLength = '50'
+    stepSize = '1'
+    centerEnb = 'true'
+    centerRange = '50'
+    extractionPoint = '500000'
+    multiplication = '1'
+    # CNN training settings
+    batchSize = '1'
+    epoch = '10'
+    model = 'tempModel'
+    # default given in the caller of the train cnn
+    design = 'originalModel'
+    # general settings
+    deleteWhenDone = 'true'
+    rawFilesPath = ''
+    force = False
+    # extra training settings
+    minAcc = 0
+    maxLoss = sys.float_info.max
+    triesCount = 1
+    
+    ########################################################################
+    # get all the arguments from the commandline
+    ########################################################################
+    try:
+        opts, ars = getopt.getopt(argv,
+                                  "ha:b:c:d:e:f:g:i:j:k:l:m:n:o:p:q:r:t:u:v:w:y:",
+                                  ["force"])
+    except getoptError:
+        HelpPrinterTrain()
+        sys.exit(2)
+    for opt, arg in opts:
+        if opt == "-h":
+            HelpPrinterTrain()
+            sys.exit(1)
+        elif opt in ("-a"):
+            startMs = arg
+        elif opt in ("-b"):
+            endMs = arg
+        elif opt in ("-c"):
+            startMssel = arg
+        elif opt in ("-d"):
+            endMssel = arg
+        elif opt in ("-e"):
+            numberOfPopulations = arg
+        elif opt in ("-f"):
+            individuals = arg
+        elif opt in ("-g"):
+            windowEnb = arg
+        elif opt in ("-i"):
+            windowLength = arg
+        elif opt in ("-j"):
+            stepSize = arg
+        elif opt in ("-k"):
+            centerEnb = arg
+        elif opt in ("-l"):
+            centerRange = arg
+        elif opt in ("-m"):
+            multiplication = arg
+        elif opt in ("-n"):
+            batchSize = arg
+        elif opt in ("-o"):
+            epoch = arg
+        elif opt in ("-p"):
+            model = arg
+        elif opt in ("-q"):
+            design = arg
+        elif opt in ("-r"):
+            deleteWhenDone = arg
+        elif opt in ("-t"):
+            rawFilesPath = arg
+        elif opt in ("-u"):
+            minAcc = float(arg)
+        elif opt in ("-v"):
+            maxLoss = float(arg)
+        elif opt in ("-w"):
+            triesCount = int(arg)
+        elif opt in ("-y"):
+            extractionPoint = arg
+        elif opt in ("--force"):
+            force = True
+    
+    ########################################################################
+    # check if some options are filled in
+    ### time ###
+    startTime = time.time()
+    ########################################################################
+    # check if there is enough data to perform the inference
+    if (((int(startMs) == 0 and int(endMs) == 0 and int(startMssel) == 0
+        and int(endMssel) == 0 and len(rawFilesPath) == 0) or 
+        (int(startMs) > int(endMs) or int(startMssel) > int(endMssel))) and 
+        len(rawFilesPath) == 0):
+        print("ERROR: Not enough data to train a model")
+        HelpPrinterTrain()
+        sys.exit(1)
+    
+    if (triesCount < 1):
+        print("ERROR: Count should atleast be 1")
+        sys.exit(1)
+        
+    # and check if model already exists, have to force overwrite
+    if (os.path.exists(model) and not force):
+        print("ERROR: Model already present and no overwrite flag is provided")
+        print("If overwrite is desired add --force flag")
+        sys.exit(1)
+        
+    # check if the trajectory folder exists before running the code
+    if (int(startMssel) > 0):
+        if (not os.path.exists("trajectory_files/")):
+            print("ERROR: no folder called trajectory files, please")
+            print("run: ./tools/setupTrajectoryFiles.sh")
+            sys.exit(1)
+    
+    ########################################################################
+    # run all the scripts and python code
+    # setup the file structure
+    ########################################################################
+    print("start running all scripts and timer")
+    print("generate random folder name")
+    folderName = 'out/outTrain_' + str(randomGenerator.id_generator())
+    print("folder name: " + str(folderName))
+
+    # create out folder
+    subprocess.call(shlex.split('./src/scripts/makeFolder.sh' +
+                                ' -d out '))
+
+    # call the cleaning script
+    subprocess.call(shlex.split(
+        './src/scripts/cleanCompleteTrain.sh' +
+        ' -d ' + str(folderName)))
+    
+    ########################################################################
+    # If no raw files are already given generate them
+    ### time ###
+    timeInitialSetup = time.time() - startTime
+    startTime = time.time()
+    ########################################################################
+    if (len(rawFilesPath) == 0):
+        # call the ms/mssel generation script
+        subprocess.call(shlex.split('./src/scripts/dataGeneration.sh' +
+                                    ' -s ' + str(int(startMs)) +
+                                    ' -e ' + str(int(endMs)) +
+                                    ' -b ' + str(int(startMssel)) +
+                                    ' -f ' + str(int(endMssel)) +
+                                    ' -i ' + str(numberOfPopulations) +
+                                    ' -c ' + str(individuals) +
+                                    ' -d ' + str(folderName)))
+        rawFilesPath = folderName + "/raw"
+    else:
+        with os.scandir(str(rawFilesPath) + "/neutral/") as folder:
+            for textFile in folder:
+                if textFile.is_file():
+                    # open the file and find the first line to determine 
+                    # the height of the image
+                    msFile = open(textFile.path, 'r')
+                    for lineIndex, line in enumerate(msFile):
+                        if lineIndex == 0:
+                            individuals = str([
+                                int(lineIndex) for lineIndex in line.split() if
+                                lineIndex.isdigit()][0])
+                        break
+                    msFile.close()
+    
+    ########################################################################
+    # Generate the images
+    ### time ###
+    timeDataGeneration = time.time() - startTime
+    startTime = time.time()
+    ########################################################################
+
+    # generate neutral images
+    print("Start conversion for the neutral files to bitmaps")
+    with os.scandir(str(rawFilesPath) + "/neutral/") as folder:
+        i = 0
+        for textFile in folder:
+            if textFile.is_file():          
+                callerBitmap.main(['-i' + textFile.path,
+                               '-o' + str(folderName) +
+                               '/img/neutral/BASE_IMAGES' + str(i) + "_",
+                               '-w' + str(windowEnb),
+                               '-l' + str(windowLength),
+                               '-s' + str(stepSize),
+                               '-c' + str(centerEnb),
+                               '-z' + str(centerRange),
+                               '-m' + str(multiplication),
+                               '-p' + str(extractionPoint)])
+                i += 1
+        if (i == 0):
+            print("WARNING: No txt files found do you have the subfolder neutral under the given path")
+    
+    ### time ###
+    timeMsImageGeneration = time.time() - startTime
+    startTime = time.time()
+    ############
+    
+    # generate the selection images
+    print("Start conversion for the selection files to bitmaps")
+    with os.scandir(str(rawFilesPath) + "/selection/") as folder:
+        i = 0
+        for textFile in folder:
+            if textFile.is_file():
+                callerBitmap.main(['-i' + textFile.path,
+                               '-o' + str(folderName) +
+                               '/img/selection/TEST_IMAGES' + str(i),
+                               '-w' + str(windowEnb),
+                               '-l' + str(windowLength),
+                               '-s' + str(stepSize),
+                               '-c' + str(centerEnb),
+                               '-z' + str(centerRange),
+                               '-m' + str(multiplication),
+                               '-p' + str(extractionPoint)])
+                i += 1
+        if (i == 0):
+            print("WARNING: No txt files found do you have the subfolder selection under the given path")
+    
+    ########################################################################
+    # Train the model
+    ### time ###
+    timeMsSelImageGeneration = time.time() - startTime
+    startTime = time.time()
+    ########################################################################
+    
+    # call the cnn
+    for i in range(triesCount):
+        callerTrainCNN.main(['-m' + str(model),
+                             '-d' + str(folderName) + '/img/',
+                             '-b' + str(batchSize),
+                             '-e' + str(epoch),
+                             '-y' + str(individuals),
+                             '-x' + str(windowLength),
+                             '-a' + str(design)])
+        # check the acc
+        openfile = open(str(model) + "/TrainResultsAcc.txt", 'r')
+        for lineIndex, line in enumerate(openfile):
+            if lineIndex == int(epoch)-1:
+                finalAcc = np.array(re.findall("\d+\.\d+", line))
+                finalAcc = finalAcc.astype(np.float)
+                break
+        openfile.close()
+        # check the loss
+        openfile = open(str(model) + "/TrainResultsLoss.txt", 'r')
+        for lineIndex, line in enumerate(openfile):
+            if lineIndex == int(epoch)-1:
+                finalLoss = np.array(re.findall("\d+\.\d+", line))
+                finalLoss = finalLoss.astype(np.float)
+                break
+        openfile.close()
+        # performs checks
+        print(finalAcc)
+        print(finalLoss)
+        if (finalAcc[1] >= minAcc and finalAcc[2] >= minAcc and
+            finalLoss[1] <= maxLoss and finalLoss[2] <= maxLoss):
+            print("Model is within requirements")
+            break
+        
+    ########################################################################
+    # Perform the clean up
+    ### time ###
+    timeTrain = time.time() - startTime
+    startTime = time.time()
+    ########################################################################
+
+    # call the cleaning script
+    if(str2bool.str2bool(deleteWhenDone)):
+        print("cleaning up the folder and deleting it")
+        subprocess.call(shlex.split(
+            './src/scripts/deleteFolder.sh' +
+            ' -d ' + str(folderName)))
+
+    ########################################################################
+    # Save all logs and the script is completed
+    ### time ###
+    timeCleanUp = time.time() - startTime
+    ########################################################################
+
+    print("No more measurements being done")
+    print("Saving execution time data")
+    # save terminal command used for creation
+    with open((model + "/CommandLine.txt"), 'w') as f:
+        with redirect_stdout(f):
+            print("-a " + str(startMs))
+            print("-b " + str(endMs))
+            print("-c " + str(startMssel))
+            print("-d " + str(endMssel))
+            print("-e " + str(numberOfPopulations))
+            print("-f " + str(individuals))
+            print("-g " + str(windowEnb))
+            print("-i " + str(windowLength))
+            print("-j " + str(stepSize))
+            print("-k " + str(centerEnb))
+            print("-l " + str(centerRange))
+            print("-m " + str(multiplication))
+            print("-n " + str(batchSize))
+            print("-o " + str(epoch))
+            print("-p " + str(model))
+            print("-q " + str(design))
+            print("-r " + str(deleteWhenDone))
+            print("-t " + str(rawFilesPath))
+            print("-y " + str(extractionPoint))
+            if force:
+                print("--force")
+
+    totalTime = (timeInitialSetup + timeDataGeneration + timeMsImageGeneration
+                 + timeMsSelImageGeneration + timeTrain + timeCleanUp)
+
+    with open((model + "/TimingResults.txt"), 'w') as f:
+        with redirect_stdout(f):
+            print("Time summary in seconds\n")
+            print("Initial setup time------------:\t%.5f" %
+                  timeInitialSetup)
+            print("Data generation time----------:\t%.5f" %
+                  timeDataGeneration)
+            print("Bitmap generation time ms-----:\t%.5f" %
+                  timeMsImageGeneration)
+            print("Bitmap generation time mssel--:\t%.5f" %
+                  timeMsSelImageGeneration)
+            print("Total training time-----------:\t%.5f" %
+                  timeTrain)
+            print("Total clean up time-----------:\t%.5f" %
+                  timeCleanUp)
+            print("Total Time -------------------:\t%.5f" %
+                  totalTime)
+
+    print("completed running all scripts")
+
+if __name__ == "__main__":
+    main(sys.argv[1:])

@@ -1,0 +1,17 @@
+#ignore folder
+.vscode/
+/out/
+/outLoad/
+/outTrain/
+__pycache__/
+/trajectory_files_old/
+/trajectory_files_new/
+/trajectory_files/
+/test/
+/test2/
+/archive/
+/trajectory_files.zip
+/input*/
+/models*/
+/*.txt
+/*.zip

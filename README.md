@@ -14,7 +14,7 @@ Version: 1.0
 
 ASDEC (Accurate Sweep Detection Enabled by a CNN) is a stand-alone software implementation of a Convolutional Neural Network (CNN) for sweep detection.
 
-The current ASDEC release can process SNP data in Hudson's ms or VCF (Variant Call Format) file formats. The given basic run example, is in Hudson's ms format. For the VCF format, refer to the respective Wikipedia entry (https://en.wikipedia.org/wiki/Variant_Call_Format).
+The current ASDEC release can process SNP data in Hudson's ms or VCF (Variant Call Format) file formats. The given basic run example is in Hudson's ms format. For the VCF format, refer to the respective Wikipedia entry (https://en.wikipedia.org/wiki/Variant_Call_Format).
 
 # Download and Setup
 --------------------
@@ -101,7 +101,7 @@ The output file TrainResultsAcc.txt: epoch number, training accuracy, validation
 ```bash 
 The output file TrainResultsLoss.txt: epoch number, training loss, validation loss  
 ```
-The other ouput files are self explenatory  
+The other output files are self-explanatory  
 
 ### Inference
 Go to the root of the ASDEC repository.
@@ -128,10 +128,10 @@ The preLog files: image starting position, image end position, average image pos
 ```bash
 The postLog files: entry starting position, entry end position, average entry position, probability neutrality, probability selection, number of points used in averaging
 ```
-for the summary file the entry with the highest probability of selection is taken of every postLog file.  
+for the summary file, the entry with the highest probability of selection is taken of every postLog file.  
 ```bash
 The summary files: entry starting position, entry end position, average entry position, probability neutrality, probability selection, number of points used in averaging    
-The other files in the info folder are self explenatory.  
+The other files in the info folder are self-explanatory.  
 ```
 ## Get metrics success rate, distance error, and TPR
 Go to the root of the ASDEC repository.
@@ -145,7 +145,7 @@ python3 tools/accuracy.py -h
 ```
 **output:** 
 ```bash
-the accuracy files: Path to file to score, raw distance, amount of entries correct, total amount of entries, percentage of correct entries (success rate), raw distance  
+the accuracy files: Path to file to score, raw distance, amount of entries correct, the total amount of entries, percentage of correct entries (success rate), raw distance  
 ```
 And to calculate the TPR with a given 5% FPR value:
 ```bash
@@ -157,7 +157,7 @@ python3 tools/TPRFPR.py -h
 ```
 **output:**  
 ```bash
-the TPR files: Path to file to score: value of neutral data-set at given FPR value, given FPR, calculated TPR  
+the TPR files: Path to file to score: the value of neutral data-set at given FPR value, given FPR, calculated TPR  
 ```
 These results are probably not usable, but give a simple introduction into how to use ASDEC.
 

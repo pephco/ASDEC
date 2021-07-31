@@ -66,15 +66,15 @@ def HelpPrinterTrain():
     print("\t\t-j: step between windows (int) (def: 1)")
     print("\t-k: enable extraction mode (bool) (def: true)")
     print("\t\t-y: position for extraction mode (float) (def: 500000)")
-    print("\t\t-l: range for extraction mode (int) (def: 50)")
-    print("\t-m: multiplication factor position (float) (def: 1)")
+    print("\t\t-l: range for extraction mode (int) (def: 28)")
+    print("\t-m: multiplication factor position (float) (def: 1000000)")
     print("\n")
     print("CNN train settings:")
     print("The following settings consider all settings possible for training of")
     print("a given model based on a model design.")
     print("\t-n: batch size (int) (def: 1)")
     print("\t-o: amount of epochs (int) (def: 10)")
-    print("\t-p: output path + model name (string) (def: tempModel)")
+    print("\t-p: output path + model name (string) (def: ModelDesignC3F32EL1S32_)")
     print("\t\t--force: save even if model is already present (bool) (def: false)")
     print("\n")
     print("Advanced settings !Please use with caution!:")
@@ -121,15 +121,15 @@ def main(argv):
     windowLength = '50'
     stepSize = '1'
     centerEnb = 'true'
-    centerRange = '50'
+    centerRange = '28'
     extractionPoint = '500000'
-    multiplication = '1'
+    multiplication = '1000000'
     # CNN training settings
     batchSize = '1'
     epoch = '10'
     model = 'tempModel'
     # default given in the caller of the train cnn
-    design = 'originalModel'
+    design = 'ModelDesignC3F32EL1S32_'
     # general settings
     deleteWhenDone = 'true'
     rawFilesPath = ''

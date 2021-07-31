@@ -49,7 +49,7 @@ def HelpPrinterLoad():
     print("Bitmap generation settings:")
     print("The following settings consider the generation of each bitmap/image.")
     print("Please note that all settings are represented by snips/pixels.")
-    print("\t-m: multiplication factor position (float) (def: 1)")
+    print("\t-m: multiplication factor position (float) (def: 1000000)")
     print("Post processing settings:")
     print("To perform post processing please provide a path in the form of a folder where")
     print("the results can be saved only the -o flag is forced.")
@@ -57,17 +57,17 @@ def HelpPrinterLoad():
     print("\t-q: mode (int) (see below) (def: 3)")
     print("\t\tMode 1: Window based on entries in the file")
     print("\t\t\t-r: stepsize in entries in the file (def: 4000)")
-    print("\t\t\t-s: windowsize in entries in the file (def: 0.05)")
+    print("\t\t\t-s: windowsize in entries in the file (def: 10000)")
     print("\t\tMode 2: Window based on position")
     print("\t\t\t-r: stepsize in position (def: 4000)")
-    print("\t\t\t-s: windowsize in position (def: 0.05)")
+    print("\t\t\t-s: windowsize in position (def: 10000)")
     print("\t\tMode 3: Grid normal mode")
     print("\t\t\t-r: gridsize in interger value (if set to zero just " +
           "\t\n\t\t\t take the amount of entries in the file) (def: 4000)")
-    print("\t\t\t-s: max distance range in position (def: 0.05)")
+    print("\t\t\t-s: max distance range in position (def: 10000)")
     print("\t\tMode 4: Grid no max size check (always enforces grid size)")
     print("\t\t\t-r: gridsize in interger value (def: 4000)")
-    print("\t\t\t-s: max distance range (def: 0.05)")
+    print("\t\t\t-s: max distance range (def: 10000)")
     print("\n")
     print("Settings general:")
     print("These settings are required to suite the hardware")
@@ -101,7 +101,7 @@ def HelpPrinterLoad():
     print("\t\t-j: step between windows (int) (def: 1)")
     print("\t-k: enable extraction mode (bool) (def: false)")
     print("\t\t-y: position for extraction mode (float) (def: 500000)")
-    print("\t\t-l: range for extraction mode (int) (def: 50)")
+    print("\t\t-l: range for extraction mode (int) (def: 28)")
     print("\n")
     print("Post processing settings:")
     print("To save all files in a standard file structure under the path of the")
@@ -129,9 +129,9 @@ def main(argv):
     windowLength = 'NULL'
     stepSize = '1'
     centerEnb = 'false'
-    centerRange = '50'
+    centerRange = '28'
     extractionPoint = '500000'
-    multiplication = '1'
+    multiplication = '1000000'
     # CNN load settings
     model = 'tempModel'
     # Post processing settings
@@ -140,7 +140,7 @@ def main(argv):
     logSummary = 'NULL'
     mode = '3'
     parama = '4000'
-    paramb = '0.05'
+    paramb = '10000'
     # general settings
     threads = 1
     deleteWhenDone = 'false'

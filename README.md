@@ -54,6 +54,23 @@ To get the trajectory files run the included bash script from the root of the re
 ./tools/setupTrajectoryFiles.sh
 ```
 
+### VCF file parsing
+For the VCF parsing a subset of the tool [RAiSD](https://github.com/pephco/RAiSD/) is used therefore to use the vcf parser the [GNU Scientific Library (GSL)](https://www.gnu.org/software/gsl/) needs to be installed. Otherwise the following error can be observed.
+
+	Error message:
+	./RAiSD_Parser/RAiSD: error while loading shared libraries: libgsl.so.23: cannot open shared object file: No such file or directory
+	rm: cannot remove 'RAiSD_Info.test_run': No such file or directory
+	rm: cannot remove 'RAiSD_Report.test_run': No such file or directory
+
+	------STARTED RUNNING test_input.vcf.ms------
+
+	Traceback (most recent call last):
+	  File "src/LoadCNN.py", line 555, in <module>
+	    main(sys.argv[1:])
+	  File "src/LoadCNN.py", line 416, in main
+	    openfile = open(filesFound, 'r')
+	FileNotFoundError: [Errno 2] No such file or directory: '/home/sweepcnn/Downloads/test_input.vcf.ms'
+
 ### Basic test
 After the previous steps check the setup by running the following commands from the root of the repo (always run from the root of the repo to avoid potential problems).
 ```bash

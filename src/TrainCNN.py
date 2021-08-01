@@ -293,7 +293,6 @@ def main(argv):
         for textFile in folder:
             if textFile.is_file():
                 filesToRunNeutral.append(str(textFile.path))
-                print(textFile.path)
 
     i = 0            
     for files in filesToRunNeutral:

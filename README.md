@@ -55,7 +55,7 @@ To get the trajectory files run the included bash script from the root of the re
 ```
 
 ### VCF file parsing
-For the VCF parsing a subset of the tool RAiSD is used therefore to use the vcf parser the [GNU Scientific Library (GSL)](https://www.gnu.org/software/gsl/) needs to be installed. Otherwise the following error can be observed.
+For the VCF parsing a subset of the tool [RAiSD](https://github.com/pephco/RAiSD/) is used therefore to use the vcf parser the [GNU Scientific Library (GSL)](https://www.gnu.org/software/gsl/) needs to be installed. Otherwise the following error can be observed.
 
 	Error message:
 	./RAiSD_Parser/RAiSD: error while loading shared libraries: libgsl.so.23: cannot open shared object file: No such file or directory

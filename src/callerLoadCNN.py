@@ -90,8 +90,8 @@ def main(argv):
     # check if all parameters are filled in
     ########################################################################
     if (len(mod) == 0 or len(direc) == 0 or len(outdirec) == 0):
-        print("ERROR: not all fields are filled in!")
         helpPrinterCNN()
+        print("ERROR: not all fields are filled in!")
         sys.exit()
 
     ########################################################################

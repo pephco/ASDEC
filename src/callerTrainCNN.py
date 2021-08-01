@@ -100,8 +100,8 @@ def main(argv):
     ########################################################################
     if (len(direc) == 0 or len(imgH) == 0 or len(imgW) == 0 or
         len(batchS) == 0 or len(ep) == 0 or len(mod) == 0):
-        print("ERROR: not all fields are filled in!")
         helpPrinterCNN()
+        print("ERROR: not all fields are filled in!")
         sys.exit(2)
 
     if (int(float(batchS)) <= 0 or int(float(imgW)) <= 0 or

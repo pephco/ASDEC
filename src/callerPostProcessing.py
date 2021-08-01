@@ -127,8 +127,8 @@ def main(argv):
     ########################################################################
     if (len(mod) == 0 or len(indirec) == 0 or
             len(param1) == 0 or len(param2) == 0):
-        print("ERROR: not all fields are filled in!")
         helpPrinterPost()
+        print("ERROR: not all fields are filled in!")
         sys.exit()
 
     if (float(param1) <= 0 or float(param2) <= 0):

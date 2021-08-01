@@ -70,8 +70,9 @@ def helpPrinter():
           "\tif not set take whole file")
     print("\t -e, --endPopulation: population to which to generate\n" +
           "\tif not set take whole file")
-    print("\t -x, --memorySize: parsing vcf file memory consumption (input * 2)")
-    print("\t -v: special option voor complete prog timing")
+    print("\t -x, --memorySize: parsing vcf file, memory consumption (input * 2)")
+    print("\t -X, --chromosomeLength: parsing vcf file, total chromosome length (def: 10)")
+    print("\t -v: special option voor complete prog timing (def 100000)")
 
 ############################################################################
 # Function which handles all different input arguments
@@ -97,17 +98,18 @@ def main(argv):
     timeFolder = 'NULL'
     extractionPoint = ''
     memorySize = '10'
+    chromosomeLength = '100000'
 
     ############################################################################
     # get all the arguments from the commandline
     ############################################################################
     try:
-        opts, args = getopt.getopt(argv, "hi:o:w:s:l:c:z:p:m:a:e:v:x:",
+        opts, args = getopt.getopt(argv, "hi:o:w:s:l:c:z:p:m:a:e:v:x:X:",
                                    ["ifile=", "ofile=", "windowEnb=",
                                     "windowStep=", "windowSize=", "extractionEnb=",
                                     "extractionOff=", "extractionPoint="
                                     "multiplicationPosition=", "startPopulation=", 
-                                    "endPopulation=", "memorySize="])
+                                    "endPopulation=", "memorySize=", "chromosomeLength="])
     except getoptError:
         helpPrinter()
         sys.exit(2)
@@ -139,6 +141,8 @@ def main(argv):
             extractionPoint = arg
         elif opt in ("-x", "--memorySize"):
             memorySize = arg
+        elif opt in ("-X", "--chromosomeLength"):
+            chromosomeLength = arg
         elif opt == "-v":
             timeFolder = arg
 
@@ -146,9 +150,9 @@ def main(argv):
     # perform a check if the two mandatory boolean arguments are provided
     ############################################################################
     if len(windowTrigger) == 0 or len(extractionTrigger) == 0:
+        helpPrinter()
         print("ERROR: boolean for enabling window mode and/or enabling "
               "the center not set or not set correctly!")
-        helpPrinter()
         sys.exit()
 
     ############################################################################
@@ -161,15 +165,15 @@ def main(argv):
         if (len(inputfile) == 0 or len(outputfile) == 0 or len(stepSize) == 0
                 or len(size) == 0 or len(extractionSize) == 0 
                 or len(extractionPoint) == 0):
-            print("ERROR: not all fields are filled in!")
             helpPrinter()
+            print("ERROR: not all fields are filled in!")
             sys.exit()
     elif (str2bool.str2bool(windowTrigger) == True
         and str2bool.str2bool(extractionTrigger) == False):
         if (len(inputfile) == 0 or len(outputfile) == 0 or len(stepSize) == 0 or
                 len(size) == 0):
-            print("ERROR: not all fields are filled in!")
             helpPrinter()
+            print("ERROR: not all fields are filled in!")
             sys.exit()
         extractionSize="1"
         extractionPoint = "1"
@@ -177,15 +181,15 @@ def main(argv):
         and str2bool.str2bool(extractionTrigger) == True):
         if (len(inputfile) == 0 or len(outputfile) == 0 or 
             len(extractionSize) == 0 or len(extractionPoint) == 0):
-            print("ERROR: not all fields are filled in!")
             helpPrinter()
+            print("ERROR: not all fields are filled in!")
             sys.exit()
         stepSize="1"
         size="1"
     else:
         if len(inputfile) == 0 or len(outputfile) == 0:
-            print("ERROR: not all fields are filled in!")
             helpPrinter()
+            print("ERROR: not all fields are filled in!")
             sys.exit()
         stepSize="1"
         size="1"
@@ -204,7 +208,8 @@ def main(argv):
     ############################################################################
     # If the file is in the vcf format call the RAiSD parser
     ############################################################################
-    vcfConversion.vcfConversion(inputfile, mulPos, memorySize)
+    if vcfConversion.vcfConversion(inputfile, chromosomeLength, memorySize):
+        inputfile = inputfile + ".ms"
     
     ############################################################################
     # call the code which really does the work

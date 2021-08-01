@@ -94,7 +94,6 @@ def HelpPrinterTrain():
     print("\n")
     print("General settings:")
     print("\t-r: Perform cleanup (bool) (def: true)")
-    print("\t-x: parsing vcf file memory consumption (input * 2) (float) (def: 10)")
     print("\n")
     print("Extra training settings:")
     print("These specify a maximal loss and mininal acc, used for rapid")
@@ -102,6 +101,10 @@ def HelpPrinterTrain():
     print("\t-u: minimal accuracy (float) (def: 0)")
     print("\t-v: maximal loss (float) (def: infinite)")
     print("\t-w: amount of tries (int) (def: 1)")
+    print("\n")
+    print("VCF parsing settings:")
+    print("\t-x: parsing vcf file memory consumption (input * 2) (float) (def: 10)")
+    print("\t-X: total chromosome length (float) (def 100000)")
     
 
 
@@ -135,19 +138,21 @@ def main(argv):
     # general settings
     deleteWhenDone = 'true'
     rawFilesPath = ''
-    memorySize = '10'
     force = False
     # extra training settings
     minAcc = 0
     maxLoss = sys.float_info.max
     triesCount = 1
+    # vcf parsing settings
+    memorySize = '10'
+    chromosomeLength = '100000'
     
     ########################################################################
     # get all the arguments from the commandline
     ########################################################################
     try:
         opts, ars = getopt.getopt(argv,
-                                  "ha:b:c:d:e:f:g:i:j:k:l:m:n:o:p:q:r:t:u:v:w:y:x:",
+                                  "ha:b:c:d:e:f:g:i:j:k:l:m:n:o:p:q:r:t:u:v:w:y:x:X:",
                                   ["force"])
     except getoptError:
         HelpPrinterTrain()
@@ -202,6 +207,8 @@ def main(argv):
             extractionPoint = arg
         elif opt in ("-x"):
             memorySize = arg
+        elif opt in ("-X"):
+            chromosomeLength = arg
         elif opt in ("--force"):
             force = True
     
@@ -215,8 +222,8 @@ def main(argv):
         and int(endMssel) == 0 and len(rawFilesPath) == 0) or 
         (int(startMs) > int(endMs) or int(startMssel) > int(endMssel))) and 
         len(rawFilesPath) == 0):
-        print("ERROR: Not enough data to train a model")
         HelpPrinterTrain()
+        print("ERROR: Not enough data to train a model")
         sys.exit(1)
     
     if (triesCount < 1):
@@ -253,7 +260,6 @@ def main(argv):
     subprocess.call(shlex.split(
         './src/scripts/cleanCompleteTrain.sh' +
         ' -d ' + str(folderName)))
-    
     ########################################################################
     # If no raw files are already given generate them
     ### time ###
@@ -271,20 +277,7 @@ def main(argv):
                                     ' -c ' + str(individuals) +
                                     ' -d ' + str(folderName)))
         rawFilesPath = folderName + "/raw"
-    else:
-        with os.scandir(str(rawFilesPath) + "/neutral/") as folder:
-            for textFile in folder:
-                if textFile.is_file():
-                    # open the file and find the first line to determine 
-                    # the height of the image
-                    msFile = open(textFile.path, 'r')
-                    for lineIndex, line in enumerate(msFile):
-                        if lineIndex == 0:
-                            individuals = str([
-                                int(lineIndex) for lineIndex in line.split() if
-                                lineIndex.isdigit()][0])
-                        break
-                    msFile.close()
+                    
     
     ########################################################################
     # Generate the images
@@ -292,14 +285,19 @@ def main(argv):
     timeDataGeneration = time.time() - startTime
     startTime = time.time()
     ########################################################################
-
+    filesToRunNeutral = []
     # generate neutral images
     print("Start conversion for the neutral files to bitmaps")
+    # explore the folder for all files to run
     with os.scandir(str(rawFilesPath) + "/neutral/") as folder:
-        i = 0
         for textFile in folder:
-            if textFile.is_file():          
-                callerBitmap.main(['-i' + textFile.path,
+            if textFile.is_file():
+                filesToRunNeutral.append(str(textFile.path))
+                print(textFile.path)
+
+    i = 0            
+    for files in filesToRunNeutral:
+        callerBitmap.main(['-i' + files,
                                '-o' + str(folderName) +
                                '/img/neutral/BASE_IMAGES' + str(i) + "_",
                                '-w' + str(windowEnb),
@@ -310,22 +308,28 @@ def main(argv):
                                '-m' + str(multiplication),
                                '-p' + str(extractionPoint),
                                '-x' + str(memorySize)])
-                i += 1
-        if (i == 0):
-            print("WARNING: No txt files found do you have the subfolder neutral under the given path")
-    
+        i += 1
+    if (i == 0):
+        print("WARNING: No txt files found do you have the subfolder neutral under the given path")
+        
+                    
     ### time ###
     timeMsImageGeneration = time.time() - startTime
     startTime = time.time()
     ############
     
+    filesToRunSelection = []
     # generate the selection images
     print("Start conversion for the selection files to bitmaps")
+    # explore the folder for all files to run
     with os.scandir(str(rawFilesPath) + "/selection/") as folder:
-        i = 0
         for textFile in folder:
             if textFile.is_file():
-                callerBitmap.main(['-i' + textFile.path,
+                filesToRunSelection.append(str(textFile.path))
+    
+    i = 0            
+    for files in filesToRunSelection:
+        callerBitmap.main(['-i' + files,
                                '-o' + str(folderName) +
                                '/img/selection/TEST_IMAGES' + str(i),
                                '-w' + str(windowEnb),
@@ -336,10 +340,30 @@ def main(argv):
                                '-m' + str(multiplication),
                                '-p' + str(extractionPoint),
                                '-x' + str(memorySize)])
-                i += 1
-        if (i == 0):
-            print("WARNING: No txt files found do you have the subfolder selection under the given path")
+        i += 1
+    if (i == 0):
+        print("WARNING: No txt files found do you have the subfolder selection under the given path")
+        
+    # open a single file to get the number of individuals
+    if (len(filesToRunNeutral) > 0):
+        getIndividuals = filesToRunNeutral[0]
+    elif (len(filesToRunSelection) > 0):
+        getIndividuals = filesToRunSelection[0]
+    else:
+        getIndividuals = ""
+        print("ERROR: No files found")
+        sys.exit(1)
     
+    if getIndividuals.endswith(".vcf"):
+        getIndividuals = getIndividuals + ".ms"
+    msFile = open(getIndividuals, 'r')
+    for lineIndex, line in enumerate(msFile):
+        if lineIndex == 0:
+            individuals = str([
+                int(lineIndex) for lineIndex in line.split() if
+                lineIndex.isdigit()][0])
+        break
+    msFile.close()
     ########################################################################
     # Train the model
     ### time ###
@@ -425,6 +449,7 @@ def main(argv):
             print("-t " + str(rawFilesPath))
             print("-y " + str(extractionPoint))
             print("-x " + str(memorySize))
+            print("-X " + str(chromosomeLength))
             if force:
                 print("--force")
 

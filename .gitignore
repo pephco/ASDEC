@@ -13,5 +13,6 @@ __pycache__/
 /trajectory_files.zip
 /input*/
 /models*/
+/temp*/
 /*.txt
 /*.zip

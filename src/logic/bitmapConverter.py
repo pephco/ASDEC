@@ -66,7 +66,7 @@ def ImageConversion(path, outPath, windowMode, stepRows, windowsSize,
                     print("not supported input parameters")
                     return
             else:
-                print("not supproted software package")
+                print("not supported software package")
                 return
             break
         elif lineIndex > 0:
@@ -197,6 +197,11 @@ def ImageConversion(path, outPath, windowMode, stepRows, windowsSize,
             maxIndex = center + extractionOffset
             # check if the new index's are valid
             if ((minIndex < 0) or (maxIndex > len(positions))):
+                print("Positions vector: ")
+                print(positions)
+                print("Positions selected: " + str(center))
+                print("MinIndex selected: " + str(minIndex))
+                print("MaxIndex selected: " + str(maxIndex))
                 print("ERROR: Given extraction point not possible")
                 return
             matrix = matrix[:, minIndex:maxIndex]

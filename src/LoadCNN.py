@@ -81,7 +81,6 @@ def HelpPrinterLoad():
     print("\t-u: Perform cleanup (bool) (def: false)")
     print("\t-v: amount of steps done per thread (def: 5)")
     print("\t-w: get raw files path (string) (def: NULL)")
-    print("\t-z: parsing vcf file memory consumption (input * 2) (float) (def: 10)")
     print("\n")
     print("\n")
     print("!The following options are for advanced users only and enables search mode!")
@@ -113,6 +112,9 @@ def HelpPrinterLoad():
     print("\t-p: directory save summary files (string) (def: NULL !not saved!)")
     print("\t-x: directory save pre-post log files (string) (def: NULL !not saved!)")
     print("\n")
+    print("VCF parsing settings:")
+    print("\t-z: parsing vcf file memory consumption (input * 2) (float) (def: 10)")
+    print("\t-Z: total chromosome length (float) (def 100000)")
     
 def main(argv):
     ########################################################################
@@ -151,14 +153,16 @@ def main(argv):
     rawFilesPath = ''
     search = False
     setSearchParameter = False
+    # vcf parsing settings
     memorySize = '10'
+    chromosomeLength = '100000'
 
     ########################################################################
     # get all the arguments from the commandline
     ########################################################################
     try:
         opts, ars = getopt.getopt(argv,
-                                  "ha:b:c:d:e:f:g:i:j:k:l:m:n:o:p:q:r:s:t:u:v:w:x:y:z:", 
+                                  "ha:b:c:d:e:f:g:i:j:k:l:m:n:o:p:q:r:s:t:u:v:w:x:y:z:Z:", 
                                   ["search"])
     except getoptError:
         HelpPrinterLoad()
@@ -231,6 +235,8 @@ def main(argv):
             rawFilesPath = arg
         elif opt in ("-z"):
             memorySize = arg
+        elif opt in ("-Z"):
+            chromosomeLength = arg
         elif opt in ("--search"):
             search = True
         
@@ -245,6 +251,7 @@ def main(argv):
     if ((int(startMs) == 0 and int(endMs) == 0 and int(startMssel) == 0
         and int(endMssel) == 0 and len(rawFilesPath) == 0) or 
         (int(startMs) > int(endMs) or int(startMssel) > int(endMssel))):
+        HelpPrinterLoad()
         print("ERROR: Not enough data to perform inference")
         sys.exit(1)
     
@@ -381,7 +388,6 @@ def main(argv):
     filesToRun = []
     if ("." in rawFilesPath):
         filesToRun.append(str(rawFilesPath))
-        print("here")
     else:
         with os.scandir(str(rawFilesPath)) as folder:
             for subfolder in folder:
@@ -397,9 +403,8 @@ def main(argv):
         sys.exit(1)
     
     i = 0
-    print(filesToRun)
     for filesFound in filesToRun:
-        if vcfConversion.vcfConversion(rawFilesPath, multiplication, memorySize):
+        if vcfConversion.vcfConversion(rawFilesPath, chromosomeLength, memorySize):
             filesFound = filesFound + ".ms"
         fileName = filesFound
         while True:
@@ -467,7 +472,8 @@ def main(argv):
             ' -u ' + str(stepsPerThread) +
             ' -x ' + str(logPrePost) + 
             ' -y ' + str(extractionPoint) +
-            ' -z ' + str(memorySize)))
+            ' -z ' + str(memorySize) + 
+            ' -Z ' + str(chromosomeLength)))
 
         if(logSummary != "NULL"):
             ### time ###
@@ -540,6 +546,7 @@ def main(argv):
                 print("-x " + str(logPrePost))
                 print("-y " + str(extractionPoint))
                 print("-z " + str(memorySize))
+                print("-Z " + str(chromosomeLength))
                 if search:
                     print("--search")
     print("completed running all scripts")

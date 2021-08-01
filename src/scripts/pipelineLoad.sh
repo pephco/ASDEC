@@ -21,10 +21,11 @@ helpFunction()
 	echo "-x directory save pre post log files"
 	echo "-y extraction position"
 	echo "-z memory reguirement vcf parser"
+	echo "-Z chromosome length reguirement vcf parser"
     exit 1
 }
 
-while getopts "ha:b:c:d:e:f:g:i:j:k:l:m:n:o:p:q:r:s:t:u:x:y:z:" flag
+while getopts "ha:b:c:d:e:f:g:i:j:k:l:m:n:o:p:q:r:s:t:u:x:y:z:Z:" flag
 do
     case "${flag}" in
         a) thread=${OPTARG};;
@@ -50,12 +51,13 @@ do
 		x) logPrePost=${OPTARG};;
 		y) extractionPoint=${OPTARG};;
 		z) memorySize=${OPTARG};;
+		Z) chromosomeLength=${OPTARG};;
         h) helpFunction ;;
         ?) helpFunction ;;
     esac
 done
 
-if [ -z "$thread" ] || [ -z "$inMsMssel" ] || [ -z "$imageName" ] || [ -z "$windowEnb" ] || [ -z "$windowSize" ] || [ -z "$stepSize" ] || [ -z "$centerEnb" ] || [ -z "$centerOff" ] || [ -z "$multiplication" ] || [ -z "$model" ] || [ -z "$windowHeight" ] || [ -z "$outlog" ] || [ -z "$numberOfPopulations" ] || [ -z "$folderName" ] || [ -z "$savePost" ] || [ -z "$postMode" ] || [ -z "$parama" ] || [ -z "$paramb" ] || [ -z "$saveSummary" ] || [ -z "$stepsPerThread" ] || [ -z "$logPrePost" ] || [ -z "$extractionPoint" ] || [ -z " memorySize" ]
+if [ -z "$thread" ] || [ -z "$inMsMssel" ] || [ -z "$imageName" ] || [ -z "$windowEnb" ] || [ -z "$windowSize" ] || [ -z "$stepSize" ] || [ -z "$centerEnb" ] || [ -z "$centerOff" ] || [ -z "$multiplication" ] || [ -z "$model" ] || [ -z "$windowHeight" ] || [ -z "$outlog" ] || [ -z "$numberOfPopulations" ] || [ -z "$folderName" ] || [ -z "$savePost" ] || [ -z "$postMode" ] || [ -z "$parama" ] || [ -z "$paramb" ] || [ -z "$saveSummary" ] || [ -z "$stepsPerThread" ] || [ -z "$logPrePost" ] || [ -z "$extractionPoint" ] || [ -z "$memorySize" ] || [ -z "$chromosomeLength" ]
 then
     echo "Some or all of the parameters are empty";
     helpFunction
@@ -91,7 +93,8 @@ do
     -v $stepsPerThread \
 	-x $logPrePost \
 	-y $extractionPoint \
-	-z $memorySize&
+	-z $memorySize \
+	-Z $chromosomeLength&
 done
 wait
 

@@ -13,12 +13,12 @@
 import shlex
 import subprocess
 
-def vcfConversion(inputfile, mulPos, memorySize):
+def vcfConversion(inputfile, chromosomeLength, memorySize):
     if inputfile.endswith(".vcf"):
         subprocess.call(shlex.split('./RAiSD_Parser/RAiSD' +
                                     ' -n ' + 'test_run' +
                                     ' -I ' + str(inputfile) +
-                                    ' -L ' + str(mulPos) +
+                                    ' -L ' + str(chromosomeLength) +
                                     ' -Q ' + str(memorySize) + 
                                     ' -f '))
         inputfile = inputfile + ".ms"

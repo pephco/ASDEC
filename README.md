@@ -16,6 +16,16 @@ ASDEC (Accurate Sweep Detection Enabled by a CNN) is a stand-alone software impl
 
 The current ASDEC release can process SNP data in Hudson's ms or VCF (Variant Call Format) file formats. The given basic run example is in Hudson's ms format. For the VCF format, refer to the respective Wikipedia entry (https://en.wikipedia.org/wiki/Variant_Call_Format).
 
+With respect to the handling strategy of missing data the same strategy as deployed by [RAiSD](https://github.com/pephco/RAiSD/) is used. 
+
+# Supported file formats
+-----
+
+ASDEC implements the following coalescent simulation software: ms, mssel, mbs (chromosome length always normalized by division with 100000), and msHOT. Natively the vcf format is parsed by ASDEC using a specific implementation of [RAiSD](https://github.com/pephco/RAiSD/), and the FASTA format can be used by first parsing to vcf using [RAiSD](https://github.com/pephco/RAiSD/) and then providing the vcf file to ASDEC. ASDEC also implements various coalescent simulation out of the box see the table for more information. 
+
+
+
+
 # Download and Setup
 --------------------
 

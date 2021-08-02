@@ -16,15 +16,14 @@ ASDEC (Accurate Sweep Detection Enabled by a CNN) is a stand-alone software impl
 
 The current ASDEC release can process SNP data in Hudson's ms or VCF (Variant Call Format) file formats. The given basic run example is in Hudson's ms format. For the VCF format, refer to the respective Wikipedia entry (https://en.wikipedia.org/wiki/Variant_Call_Format).
 
-With respect to the handling strategy of missing data the same strategy as deployed by [RAiSD](https://github.com/pephco/RAiSD/) is used. 
+Concerning the handling strategy of missing data the same strategy as deployed by [RAiSD](https://github.com/pephco/RAiSD/) is used. 
 
 # Supported file formats
 -----
 
-ASDEC implements the following coalescent simulation software: ms, mssel, mbs (chromosome length always normalized by division with 100000), and msHOT. Natively the vcf format is parsed by ASDEC using a specific implementation of [RAiSD](https://github.com/pephco/RAiSD/), and the FASTA format can be used by first parsing to vcf using [RAiSD](https://github.com/pephco/RAiSD/) and then providing the vcf file to ASDEC. ASDEC also implements various coalescent simulation out of the box see the table for more information. 
+ASDEC implements the following coalescent simulation software: ms, mssel, mbs (chromosome length always normalized by division with 100000), and msHOT. Natively the vcf format is parsed by ASDEC using a specific implementation of [RAiSD](https://github.com/pephco/RAiSD/), and the FASTA format can be used by first parsing to vcf using [RAiSD](https://github.com/pephco/RAiSD/) and then providing the vcf file to ASDEC. ASDEC also implements various coalescent simulations out of the box see the table for more information. 
 
-
-
+<img src="Img/CoalescentTable.PNG" width="560">
 
 # Download and Setup
 --------------------
@@ -65,7 +64,7 @@ To get the trajectory files run the included bash script from the root of the re
 ```
 
 ### VCF file parsing
-For the VCF parsing a subset of the tool [RAiSD](https://github.com/pephco/RAiSD/) is used therefore to use the vcf parser the [GNU Scientific Library (GSL)](https://www.gnu.org/software/gsl/) needs to be installed. Otherwise the following error can be observed.
+For the VCF parsing a subset of the tool [RAiSD](https://github.com/pephco/RAiSD/) is used therefore to use the vcf parser the [GNU Scientific Library (GSL)](https://www.gnu.org/software/gsl/) needs to be installed. Otherwise, the following error can be observed.
 
 	Error message:
 	./RAiSD_Parser/RAiSD: error while loading shared libraries: libgsl.so.23: cannot open shared object file: No such file or directory

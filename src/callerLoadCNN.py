@@ -44,6 +44,9 @@ def helpPrinterCNN():
     print("\t -d, --directory: directory filled with images to classify")
     print("\t -o, --outDirectory: output directory including" +
           " file name no exstension")
+    print("\t -t, --threads: Amount of threads used")
+    print("\t--GPU: use GPU for inference")
+    print("\t--CPU: use CPU for inference")
     print("\t -v, special option voor complete prog timing")
 
 ############################################################################
@@ -61,14 +64,18 @@ def main(argv):
     direc = ''
     outdirec = ''
     timeFolder = 'NULL'
+    threads = '' 
+    CPU = False
+    GPU = False
 
     ########################################################################
     # get all the arguments from the commandline
     ########################################################################
     try:
-        opts, ars = getopt.getopt(argv, "hm:d:o:v:",
+        opts, ars = getopt.getopt(argv, "hm:d:o:v:t:",
                                   ["model=", "directory=",
-                                   "outDirectory="])
+                                   "outDirectory=", "threads=",
+                                   "GPU", "CPU"])
 
     except getoptError:
         helpPrinterCNN()
@@ -83,6 +90,12 @@ def main(argv):
             direc = arg
         elif opt in ("-o", "--outDirectory"):
             outdirec = arg
+        elif opt in ("-t", "--threads"):
+            threads = arg
+        elif opt in ("--CPU"):
+            CPU = True
+        elif opt in ("--GPU"):
+            GPU = True
         elif opt == "-v":
             timeFolder = arg
 
@@ -92,13 +105,19 @@ def main(argv):
     if (len(mod) == 0 or len(direc) == 0 or len(outdirec) == 0):
         helpPrinterCNN()
         print("ERROR: not all fields are filled in!")
-        sys.exit()
+        sys.exit(1)
+        
+    if (not((CPU and GPU == False) or 
+        (CPU == False and GPU))):
+        print("ERROR: Selected none or multiple hardware settings")
+        print("only use one --GPU or --CPU")
+        sys.exit(1)
 
     ########################################################################
     # call the code which really does the work
     ########################################################################
-    loadModel = CNN.Load(mod, direc, outdirec)
-    loadModel.imageFolder()
+    loadModel = CNN.Load(mod, direc, outdirec, int(threads), CPU, GPU)
+    numberOfImages = loadModel.imageFolder()
     loadModel.generateReport()
 
     if not ("NULL" in timeFolder):
@@ -109,6 +128,7 @@ def main(argv):
                       importTime)
                 print("Perform predictions-----------:\t%.5f" %
                       (time.time() - startTime))
+                print("\tNumber of images------------:" + str(numberOfImages))      
         ############
 
 

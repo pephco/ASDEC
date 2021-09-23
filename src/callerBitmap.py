@@ -229,6 +229,7 @@ def main(argv):
         ### time ###
         with open((timeFolder), 'a') as f:
             with redirect_stdout(f):
+                print("File running:-----------------:\t" + str(inputfile))
                 print("Bitmap import-----------------:\t%.5f" %
                     importTime)
                 print("Bitmap conversion-------------:\t%.5f" %

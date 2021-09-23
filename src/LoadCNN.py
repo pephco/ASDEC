@@ -81,6 +81,8 @@ def HelpPrinterLoad():
     print("\t-u: Perform cleanup (bool) (def: false)")
     print("\t-v: amount of steps done per thread (def: 5)")
     print("\t-w: get raw files path (string) (def: NULL)")
+    print("\t--GPU: use GPU for inference")
+    print("\t--CPU: use CPU for inference")
     print("\n")
     print("\n")
     print("!The following options are for advanced users only and enables search mode!")
@@ -153,6 +155,8 @@ def main(argv):
     rawFilesPath = ''
     search = False
     setSearchParameter = False
+    CPU = False
+    GPU = False
     # vcf parsing settings
     memorySize = '10'
     chromosomeLength = '100000'
@@ -163,7 +167,7 @@ def main(argv):
     try:
         opts, ars = getopt.getopt(argv,
                                   "ha:b:c:d:e:f:g:i:j:k:l:m:n:o:p:q:r:s:t:u:v:w:x:y:z:Z:", 
-                                  ["search"])
+                                  ["search", "GPU", "CPU"])
     except getoptError:
         HelpPrinterLoad()
         sys.exit(2)
@@ -239,6 +243,10 @@ def main(argv):
             chromosomeLength = arg
         elif opt in ("--search"):
             search = True
+        elif opt in ("--CPU"):
+            CPU = True
+        elif opt in ("--GPU"):
+            GPU = True
         
     ########################################################################
     # check if options are filled in correctly
@@ -277,6 +285,16 @@ def main(argv):
             print("ERROR: no folder called trajectory files, please")
             print("run: ./tools/setupTrajectoryFiles.sh")
             sys.exit(1)
+    
+    # Check hardware selection
+    if (CPU and GPU == False):
+        inputLineTraining = "--CPU"
+    elif (CPU == False and GPU):
+        inputLineTraining = "--GPU"
+    else:
+        print("ERROR: Selected none or multiple hardware settings")
+        print("only use one --GPU or --CPU")
+        sys.exit(1)
     
     ########################################################################
     # read the required information from the commandline
@@ -365,7 +383,8 @@ def main(argv):
                                     ' -f ' + str(int(endMssel)) +
                                     ' -i ' + str(int(numberOfPopulations)) +
                                     ' -c ' + str(int(individuals)) +
-                                    ' -d ' + str(folderName)))
+                                    ' -d ' + str(folderName) +
+                                    ' -t ' + str(threads)))
         rawFilesPath = folderName + "/raw"
 
     ########################################################################
@@ -442,10 +461,6 @@ def main(argv):
         print("check if thread set are valid")
         if (tempThreads > numberOfPopulations):
             tempThreads = numberOfPopulations
-        while ((numberOfPopulations % tempThreads) != 0):
-            tempThreads -= 1.0
-            print("selected thread count is not valid threads -1")
-        print("final thread count: " + str(tempThreads))
         # call the generate script which handles all parallel parts
         # generate the bitmaps and input the bitmaps into a CNN
         subprocess.call(shlex.split(
@@ -473,7 +488,8 @@ def main(argv):
             ' -x ' + str(logPrePost) + 
             ' -y ' + str(extractionPoint) +
             ' -z ' + str(memorySize) + 
-            ' -Z ' + str(chromosomeLength)))
+            ' -Z ' + str(chromosomeLength) +
+            ' -X ' + str(inputLineTraining)))
 
         if(logSummary != "NULL"):
             ### time ###
@@ -549,6 +565,10 @@ def main(argv):
                 print("-Z " + str(chromosomeLength))
                 if search:
                     print("--search")
+                if CPU:
+                    print("--CPU")
+                if GPU:
+                    print("--GPU")
     print("completed running all scripts")
 
 if __name__ == "__main__":

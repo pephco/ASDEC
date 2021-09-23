@@ -14,21 +14,17 @@
 
 
 # region import packages
-# import pathlib
 from tensorflow.keras.models import Sequential
-# import matplotlib.pyplot as plt
 import numpy as np
 import os
-# import PIL
-# import PIL.Image
 import tensorflow as tf
 import sys
+import math
 
 from tensorflow import keras
 from tensorflow.keras import (layers, models, activations,
                               optimizers, regularizers)
 from contextlib import redirect_stdout
-
 # endregion
 
 ############################################################################
@@ -53,9 +49,37 @@ class CNN:
     # class constructor
     ########################################################################
     # region
-    def __init__(self, modelName, directory):
+    def __init__(self, modelName, directory, threads, CPU, GPU):
+        tf.config.threading.set_intra_op_parallelism_threads(math.floor(int(threads)/2))
+        tf.config.threading.set_inter_op_parallelism_threads(math.ceil(int(threads)/2))
         self.modelName = modelName
         self.directory = directory
+        self.__CheckDevice(CPU, GPU)
+    # endregion
+    
+    ########################################################################
+    # private methods
+    ########################################################################
+    # region
+    def __CheckDevice(self, CPU, GPU):
+        print("Checking installed devices")
+        CPUDevices = tf.config.list_logical_devices('CPU')
+        GPUDevices = tf.config.list_logical_devices('GPU')
+        try:
+            if CPU and len(CPUDevices) > 0:
+                self.useDevice = '/CPU:0'
+            elif GPU and len(GPUDevices) > 0:
+                print("RUNNING ON GPU")
+                self.useDevice = '/GPU:0'
+            else:
+                print("ERROR: Hardware device not found")
+                sys.exit(1)
+        except:
+            print("ERROR: Hardware device not correctly set")
+            sys.exit(1)
+        print("CPU devices: ", CPUDevices)
+        print("GPU devices: ", GPUDevices)
+        print("Selected device: ", self.useDevice)
     # endregion
 
 ############################################################################
@@ -72,8 +96,9 @@ class Training(CNN):
     ########################################################################
     # region
     def __init__(self, modelName, imgHeight, imgWidth, directory, 
-                batch_size, epochs, modelDesignName):
-        CNN.__init__(self, modelName, directory)
+                batch_size, epochs, modelDesignName, threads, 
+                CPU, GPU):
+        CNN.__init__(self, modelName, directory, threads, CPU, GPU)
         self.batch_size = batch_size
         self.epochs = epochs
         self.modelName = modelName
@@ -107,25 +132,23 @@ class Training(CNN):
             print(labels_batch.shape)
             break
             
-        # setup the callback
-        # saves the best model based on the max val_accuracy
-        model_checkpoint_callback = tf.keras.callbacks.ModelCheckpoint(
-            filepath=self.modelName + "/checkpoint",
-            save_weights_only=True,
-            monitor='val_accuracy',
-            mode='max',
-            save_best_only=True)
-
         # tensorboard is really nice for looking back at models that are already trained
         tensorboard_callback = tf.keras.callbacks.TensorBoard(self.modelName + "/tensorBoard")
         
         # call the model present in a different python file
         # This step includes the compiling and fitting of the model design
-        self.model, self.history = self.modelDesign.model(
-            len(CNN.CONST_classNames), sizeImage,
-            [model_checkpoint_callback, tensorboard_callback],
-            self.train_ds, self.val_ds, self.epochs, self.modelName)
-
+        with tf.device(self.useDevice):
+            self.model = self.modelDesign.model(
+                len(CNN.CONST_classNames), sizeImage)
+        
+            self.history = self.model.fit(
+                self.train_ds,
+                validation_data=self.val_ds,
+                verbose=1,
+                epochs=self.epochs,
+                callbacks=[tensorboard_callback]
+                )
+                
         # give a summary of the model in the terminal
         self.model.summary()
 
@@ -216,8 +239,9 @@ class Load(CNN):
     # class constructor
     ########################################################################
     # region
-    def __init__(self, modelName, directory, outDirectory):
-        CNN.__init__(self, modelName, directory)
+    def __init__(self, modelName, directory, outDirectory, threads, 
+                CPU, GPU):
+        CNN.__init__(self, modelName, directory, threads, CPU, GPU)
         self.loadedModel = keras.models.load_model(self.modelName)
         self.outDirectory = outDirectory
         self.resultsData = np.empty((0, 6), float)
@@ -239,6 +263,7 @@ class Load(CNN):
             for image in i:
                 if image.is_file():
                     self.__performPrediction(image.name)
+        return totalAmountOfImages
 
     def generateReport(self):
         maxOfImages = int(max(self.resultsData[:, 0])) + 1
@@ -285,8 +310,9 @@ class Load(CNN):
         # add the dimension
         img_array = tf.expand_dims(img_array, 0)
         
-        
-        predictions = self.loadedModel.predict(img_array)
+        # with tf.device(self.useDevice):
+            # predictions = self.loadedModel.predict(img_array)
+        predictions = [[0,0]]
         # score = tf.nn.softmax(predictions[0])
         # print(len(predictions))
         score = predictions[0]

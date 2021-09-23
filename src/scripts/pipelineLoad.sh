@@ -22,10 +22,11 @@ helpFunction()
 	echo "-y extraction position"
 	echo "-z memory reguirement vcf parser"
 	echo "-Z chromosome length reguirement vcf parser"
+	echo "-X device: --GPU, --CPU, or --TPU"
     exit 1
 }
 
-while getopts "ha:b:c:d:e:f:g:i:j:k:l:m:n:o:p:q:r:s:t:u:x:y:z:Z:" flag
+while getopts "ha:b:c:d:e:f:g:i:j:k:l:m:n:o:p:q:r:s:t:u:x:y:z:Z:X:" flag
 do
     case "${flag}" in
         a) thread=${OPTARG};;
@@ -52,12 +53,13 @@ do
 		y) extractionPoint=${OPTARG};;
 		z) memorySize=${OPTARG};;
 		Z) chromosomeLength=${OPTARG};;
+		X) inputLineTraining=${OPTARG};;
         h) helpFunction ;;
         ?) helpFunction ;;
     esac
 done
 
-if [ -z "$thread" ] || [ -z "$inMsMssel" ] || [ -z "$imageName" ] || [ -z "$windowEnb" ] || [ -z "$windowSize" ] || [ -z "$stepSize" ] || [ -z "$centerEnb" ] || [ -z "$centerOff" ] || [ -z "$multiplication" ] || [ -z "$model" ] || [ -z "$windowHeight" ] || [ -z "$outlog" ] || [ -z "$numberOfPopulations" ] || [ -z "$folderName" ] || [ -z "$savePost" ] || [ -z "$postMode" ] || [ -z "$parama" ] || [ -z "$paramb" ] || [ -z "$saveSummary" ] || [ -z "$stepsPerThread" ] || [ -z "$logPrePost" ] || [ -z "$extractionPoint" ] || [ -z "$memorySize" ] || [ -z "$chromosomeLength" ]
+if [ -z "$thread" ] || [ -z "$inMsMssel" ] || [ -z "$imageName" ] || [ -z "$windowEnb" ] || [ -z "$windowSize" ] || [ -z "$stepSize" ] || [ -z "$centerEnb" ] || [ -z "$centerOff" ] || [ -z "$multiplication" ] || [ -z "$model" ] || [ -z "$windowHeight" ] || [ -z "$outlog" ] || [ -z "$numberOfPopulations" ] || [ -z "$folderName" ] || [ -z "$savePost" ] || [ -z "$postMode" ] || [ -z "$parama" ] || [ -z "$paramb" ] || [ -z "$saveSummary" ] || [ -z "$stepsPerThread" ] || [ -z "$logPrePost" ] || [ -z "$extractionPoint" ] || [ -z "$memorySize" ] || [ -z "$chromosomeLength" ] || [ -z "$inputLineTraining" ]
 then
     echo "Some or all of the parameters are empty";
     helpFunction
@@ -65,14 +67,23 @@ fi
 
 rsync -a --delete $folderName/blank/ $folderName/sum/
 
+startPopulation=1
+stepSizePop=$((($numberOfPopulations / $thread)))
+extraPopulation=$(($numberOfPopulations - $stepSizePop * $thread))
 for number in `seq 1 $thread`
 do
+	endPopulation=$(($startPopulation + $stepSizePop - 1))
+	if [ "$(($extraPopulation))" -gt 0 ]
+	then
+		endPopulation=$(($endPopulation + 1))
+		extraPopulation=$(($extraPopulation - 1))
+	fi
     echo "start thread number: $number"
-    echo "start population: $((($number - 1) * ($numberOfPopulations / $thread) + 1))"
-    echo "end population: $((($number) * ($numberOfPopulations / $thread)))"
+    echo "start population: $startPopulation"
+    echo "end population: $endPopulation"
     ./src/scripts/generateLoad.sh -a $number \
-    -b $((($number - 1) * ($numberOfPopulations / $thread) + 1)) \
-    -c $((($number) * ($numberOfPopulations / $thread))) \
+    -b $startPopulation \
+    -c $endPopulation \
     -d $inMsMssel \
     -e $imageName \
     -f $windowEnb \
@@ -94,7 +105,9 @@ do
 	-x $logPrePost \
 	-y $extractionPoint \
 	-z $memorySize \
-	-Z $chromosomeLength&
+	-Z $chromosomeLength \
+	-X $inputLineTraining&
+	startPopulation=$(($endPopulation+1))
 done
 wait
 

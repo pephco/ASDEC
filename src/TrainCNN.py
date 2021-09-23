@@ -26,6 +26,7 @@ import time
 import os
 import numpy as np
 import re
+from subprocess import Popen, PIPE
 
 # import my own files
 import callerBitmap
@@ -94,6 +95,9 @@ def HelpPrinterTrain():
     print("\n")
     print("General settings:")
     print("\t-r: Perform cleanup (bool) (def: true)")
+    print("\t-z: Amount of threads used (int) (def: 5)")
+    print("\t--GPU: use GPU for training")
+    print("\t--CPU: use CPU for training")
     print("\n")
     print("Extra training settings:")
     print("These specify a maximal loss and mininal acc, used for rapid")
@@ -139,6 +143,9 @@ def main(argv):
     deleteWhenDone = 'true'
     rawFilesPath = ''
     force = False
+    threads = '5'
+    CPU = False
+    GPU = False
     # extra training settings
     minAcc = 0
     maxLoss = sys.float_info.max
@@ -152,8 +159,8 @@ def main(argv):
     ########################################################################
     try:
         opts, ars = getopt.getopt(argv,
-                                  "ha:b:c:d:e:f:g:i:j:k:l:m:n:o:p:q:r:t:u:v:w:y:x:X:",
-                                  ["force"])
+                                  "ha:b:c:d:e:f:g:i:j:k:l:m:n:o:p:q:r:t:u:v:w:y:x:X:z:",
+                                  ["force", "GPU", "CPU"])
     except getoptError:
         HelpPrinterTrain()
         sys.exit(2)
@@ -209,8 +216,14 @@ def main(argv):
             memorySize = arg
         elif opt in ("-X"):
             chromosomeLength = arg
+        elif opt in ("-z"):
+            threads = arg
         elif opt in ("--force"):
             force = True
+        elif opt in ("--CPU"):
+            CPU = True
+        elif opt in ("--GPU"):
+            GPU = True
     
     ########################################################################
     # check if some options are filled in
@@ -230,6 +243,10 @@ def main(argv):
         print("ERROR: Count should atleast be 1")
         sys.exit(1)
         
+    if (int(threads) < 1):
+        print("ERROR: threads can not be zero or smaller then zero")
+        sys.exit(1)
+        
     # and check if model already exists, have to force overwrite
     if (os.path.exists(model) and not force):
         print("ERROR: Model already present and no overwrite flag is provided")
@@ -243,6 +260,15 @@ def main(argv):
             print("run: ./tools/setupTrajectoryFiles.sh")
             sys.exit(1)
     
+    # Check hardware selection
+    if (CPU and GPU == False):
+        inputLineTraining = "--CPU"
+    elif (CPU == False and GPU):
+        inputLineTraining = "--GPU"
+    else:
+        print("ERROR: Selected none or multiple hardware settings")
+        print("only use one --GPU or --CPU")
+        sys.exit(1)
     ########################################################################
     # run all the scripts and python code
     # setup the file structure
@@ -273,11 +299,11 @@ def main(argv):
                                     ' -e ' + str(int(endMs)) +
                                     ' -b ' + str(int(startMssel)) +
                                     ' -f ' + str(int(endMssel)) +
-                                    ' -i ' + str(numberOfPopulations) +
-                                    ' -c ' + str(individuals) +
-                                    ' -d ' + str(folderName)))
-        rawFilesPath = folderName + "/raw"
-                    
+                                    ' -i ' + str(int(numberOfPopulations)) +
+                                    ' -c ' + str(int(individuals)) +
+                                    ' -d ' + str(folderName) +
+                                    ' -t ' + str(int(threads))))
+        rawFilesPath = folderName + "/raw"           
     
     ########################################################################
     # Generate the images
@@ -286,6 +312,8 @@ def main(argv):
     startTime = time.time()
     ########################################################################
     filesToRunNeutral = []
+    filesToRunSelection = []
+    processes = []
     # generate neutral images
     print("Start conversion for the neutral files to bitmaps")
     # explore the folder for all files to run
@@ -293,56 +321,64 @@ def main(argv):
         for textFile in folder:
             if textFile.is_file():
                 filesToRunNeutral.append(str(textFile.path))
-
-    i = 0            
-    for files in filesToRunNeutral:
-        callerBitmap.main(['-i' + files,
-                               '-o' + str(folderName) +
-                               '/img/neutral/BASE_IMAGES' + str(i) + "_",
-                               '-w' + str(windowEnb),
-                               '-l' + str(windowLength),
-                               '-s' + str(stepSize),
-                               '-c' + str(centerEnb),
-                               '-z' + str(centerRange),
-                               '-m' + str(multiplication),
-                               '-p' + str(extractionPoint),
-                               '-x' + str(memorySize)])
-        i += 1
-    if (i == 0):
-        print("WARNING: No txt files found do you have the subfolder neutral under the given path")
-        
-                    
-    ### time ###
-    timeMsImageGeneration = time.time() - startTime
-    startTime = time.time()
-    ############
-    
-    filesToRunSelection = []
-    # generate the selection images
-    print("Start conversion for the selection files to bitmaps")
-    # explore the folder for all files to run
     with os.scandir(str(rawFilesPath) + "/selection/") as folder:
         for textFile in folder:
             if textFile.is_file():
                 filesToRunSelection.append(str(textFile.path))
-    
-    i = 0            
+    baseIndex = 0
+    testIndex = 0
+    startedIndex = 0
+    for files in filesToRunNeutral:
+        startedIndex += 1
+        p = subprocess.Popen("python3 src/callerBitmap.py" + ' -i ' + files +
+                           ' -o ' + str(folderName) +
+                           '/img/neutral/BASE_IMAGES' + str(baseIndex) + "_" +
+                           ' -w ' + str(windowEnb) +
+                           ' -l ' + str(windowLength) +
+                           ' -s ' + str(stepSize) +
+                           ' -c ' + str(centerEnb) +
+                           ' -z ' + str(centerRange) +
+                           ' -m ' + str(multiplication) +
+                           ' -p ' + str(extractionPoint) +
+                           ' -x ' + str(memorySize) 
+                           , stdout=subprocess.PIPE, shell=True)
+        processes.append(p)
+        if int(threads) <= startedIndex:
+            startedIndex = 0
+            for p in processes:
+                if p.wait() != 0:
+                    print("ERROR: There was an error in thread timing")
+        baseIndex += 1
+    if (baseIndex == 0):
+        print("WARNING: No txt files found do you have the subfolder neutral under the given path")
+                
     for files in filesToRunSelection:
-        callerBitmap.main(['-i' + files,
-                               '-o' + str(folderName) +
-                               '/img/selection/TEST_IMAGES' + str(i),
-                               '-w' + str(windowEnb),
-                               '-l' + str(windowLength),
-                               '-s' + str(stepSize),
-                               '-c' + str(centerEnb),
-                               '-z' + str(centerRange),
-                               '-m' + str(multiplication),
-                               '-p' + str(extractionPoint),
-                               '-x' + str(memorySize)])
-        i += 1
-    if (i == 0):
+        startedIndex += 1
+        p = subprocess.Popen("python3 src/callerBitmap.py" + ' -i ' + files +
+                           ' -o ' + str(folderName) +
+                           '/img/selection/TEST_IMAGES' + str(testIndex) + "_" +
+                           ' -w ' + str(windowEnb) +
+                           ' -l ' + str(windowLength) +
+                           ' -s ' + str(stepSize) +
+                           ' -c ' + str(centerEnb) +
+                           ' -z ' + str(centerRange) +
+                           ' -m ' + str(multiplication) +
+                           ' -p ' + str(extractionPoint) +
+                           ' -x ' + str(memorySize)
+                           , stdout=subprocess.PIPE, shell=True)
+        processes.append(p)
+        if int(threads) <= startedIndex:
+            startedIndex = 0
+            for p in processes:
+                if p.wait() != 0:
+                    print("ERROR: There was an error in thread timing")
+        testIndex += 1
+    if (testIndex == 0):
         print("WARNING: No txt files found do you have the subfolder selection under the given path")
-        
+     
+    for p in processes:
+        if p.wait() != 0:
+            print("There was an error")
     # open a single file to get the number of individuals
     if (len(filesToRunNeutral) > 0):
         getIndividuals = filesToRunNeutral[0]
@@ -366,7 +402,7 @@ def main(argv):
     ########################################################################
     # Train the model
     ### time ###
-    timeMsSelImageGeneration = time.time() - startTime
+    timeImageGeneration = time.time() - startTime
     startTime = time.time()
     ########################################################################
     
@@ -378,7 +414,9 @@ def main(argv):
                              '-e' + str(epoch),
                              '-y' + str(individuals),
                              '-x' + str(windowLength),
-                             '-a' + str(design)])
+                             '-a' + str(design),
+                             '-t' + str(threads),
+                             inputLineTraining])
         # check the acc
         openfile = open(str(model) + "/TrainResultsAcc.txt", 'r')
         for lineIndex, line in enumerate(openfile):
@@ -449,11 +487,16 @@ def main(argv):
             print("-y " + str(extractionPoint))
             print("-x " + str(memorySize))
             print("-X " + str(chromosomeLength))
+            print("-z " + str(threads))
             if force:
                 print("--force")
+            if CPU:
+                print("--CPU")
+            if GPU:
+                print("--GPU")
 
-    totalTime = (timeInitialSetup + timeDataGeneration + timeMsImageGeneration
-                 + timeMsSelImageGeneration + timeTrain + timeCleanUp)
+    totalTime = (timeInitialSetup + timeDataGeneration + timeImageGeneration
+                 + timeTrain + timeCleanUp)
 
     with open((model + "/TimingResults.txt"), 'w') as f:
         with redirect_stdout(f):
@@ -462,10 +505,8 @@ def main(argv):
                   timeInitialSetup)
             print("Data generation time----------:\t%.5f" %
                   timeDataGeneration)
-            print("Bitmap generation time ms-----:\t%.5f" %
-                  timeMsImageGeneration)
-            print("Bitmap generation time mssel--:\t%.5f" %
-                  timeMsSelImageGeneration)
+            print("Bitmap generation time--------:\t%.5f" %
+                  timeImageGeneration)
             print("Total training time-----------:\t%.5f" %
                   timeTrain)
             print("Total clean up time-----------:\t%.5f" %

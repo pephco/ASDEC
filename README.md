@@ -1,13 +1,13 @@
 # ASDEC: Genome-wide Detection of Positive Selection using Convolutional Neural Networks
 ===============================================
 
-Authors: Nikolaos Alachiotis (n.alachiotis@gmail.com) and Matthijs Souilljee (m.l.souilljee@student.utwente.nl)
+Authors: Matthijs Souilljee (souilljee@live.nl) and Nikolaos Alachiotis (n.alachiotis@gmail.com)
 
 First release: 31/07/2021
 
-Last update: 31/07/2021
+Last update: 23/09/2021
 
-Version: 1.0
+Version: 1.1
 
 # ABOUT
 -----
@@ -113,7 +113,7 @@ python3 src/TrainCNN.py -h
 ```
 Only the parameters that differ should be added otherwise the def value is taken.
 ```bash
-python3 src/TrainCNN.py -a 1 -b 10 -c 1 -d 10 -e 10 -p models/TESTMODEL -o 3
+python3 src/TrainCNN.py -a 1 -b 10 -c 1 -d 10 -e 10 -p models/TESTMODEL -o 3 --CPU
 ```
 Here we start with data-set 1 till and including 10 for both ms and mssel (given by the values of parameters: a, b, c, and d).
 Next, we use -e to tell ASDEC to create 10 populations per file -p gives us the location and name of the model, and lastly -o gives us the number of training epochs.
@@ -138,7 +138,7 @@ python3 src/LoadCNN.py -h
 ```
 Only the parameters that differ should be added otherwise the def value is taken.
 ```bash
-python3 src/LoadCNN.py -a 1 -b 1 -c 1 -d 1 -e 2 -p archive/ -x archive/preLog/ -o archive/postLog/ -n models/TESTMODEL -t 2 -v 1 -u true --search
+python3 src/LoadCNN.py -a 1 -b 1 -c 1 -d 1 -e 2 -p archive/ -x archive/preLog/ -o archive/postLog/ -n models/TESTMODEL -t 2 -v 1 -u true --search --CPU
 ```
 Here we perform inference on data-set 1 with a model trained with data-set 1-10.
 Here the parameters -a,-b,-c,-d, and e have the same meaning as during training.
@@ -232,7 +232,7 @@ cp ModelDesignC3F32EL1S32_.py MyNewModel.py
 Open MyNewModel.py and start implementing your own CNN design, please keep the input and output equal, and compile and fit the model within this file.
 Now to use your own custom CNN design, let us use the same command as in the "Basic example train model and perform inference" and now run.
 ```bash
-python3 src/TrainCNN.py -a 1 -b 10 -c 1 -d 10 -e 10 -p models/TESTMODEL -o 3 -q MyNewModel
+python3 src/TrainCNN.py -a 1 -b 10 -c 1 -d 10 -e 10 -p models/TESTMODEL -o 3 -q MyNewModel --CPU
 ```
 Where the -q parameters tell ASDEC to use your model design.
 
@@ -240,3 +240,4 @@ Changelog
 ----------
 
 	v1.0 (31/07/2021): first release
+	V1.1 (23/09/2021): CPU and GPU update

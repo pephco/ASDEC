@@ -12,7 +12,7 @@ Version: 1.1
 # ABOUT
 -----
 
-ASDEC (Accurate Sweep Detection Enabled by a CNN) is a stand-alone software implementation of a Convolutional Neural Network (CNN) for sweep detection.
+ASDEC (Accurate Sweep Detection Enabled by a CNN) is a stand-alone software implementation of a Convolutional Neural Network (CNN) for whole-genome sweep detection.
 
 The current ASDEC release can process SNP data in Hudson's ms, VCF (Variant Call Format) file formats or FASTA using [RAiSD](https://github.com/pephco/RAiSD/) for parsing to vcf first. The given basic run example is in Hudson's ms format. For the VCF format, refer to the respective Wikipedia entry (https://en.wikipedia.org/wiki/Variant_Call_Format).
 

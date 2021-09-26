@@ -32,7 +32,7 @@ from keras.layers import Dense, Dropout, Flatten, concatenate, Concatenate, Inpu
 from keras.layers import Conv2D, MaxPooling2D, AveragePooling2D, Conv1D, MaxPooling1D, AveragePooling1D
 # endregion
 
-def model(amountOfClasses, shapeIn, callbacks, train_ds, val_ds, epochs):
+def model(amountOfClasses, shapeIn):
     # create a kernel with a height of 1
     # the result will be similair to that
     # of a 1D convolutional
@@ -106,37 +106,14 @@ def model(amountOfClasses, shapeIn, callbacks, train_ds, val_ds, epochs):
     # Compile and fit
     ####################################################################
     model = model1
+    ####################################################################
+    # Compile
+    ####################################################################
     model.compile(
             optimizer='adam',
             loss=tf.losses.SparseCategoricalCrossentropy(from_logits=True),
             metrics=['accuracy']
         )
-    # model.compile(loss=keras.losses.categorical_crossentropy,
-              # optimizer=keras.optimizers.Adam(),
-              # metrics=['accuracy'])
-              
-    history = model.fit(
-            train_ds,
-            validation_data=val_ds,
-            verbose=1,
-            epochs=epochs,
-            callbacks=callbacks
-            )
-    # self.history = self.model.fit(
-            # [self.train_ds, self.train_ds],
-            # validation_data=[self.val_ds,self.val_ds],
-            # verbose=1,
-            # epochs=self.epochs,
-            # callbacks=[model_checkpoint_callback, tensorboard_callback]
-        # )
     ####################################################################
     
-    ####################################################################
-    # Callback
-    # only if you are using callback[0]
-    ####################################################################
-    # The model weights (that are considered the best) are loaded into the model.
-    self.model.load_weights(self.modelName + "/checkpoint")
-    ####################################################################
-    
-    return model, history
+    return model

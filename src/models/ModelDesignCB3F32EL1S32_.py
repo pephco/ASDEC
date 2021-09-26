@@ -19,7 +19,7 @@ from tensorflow.keras import (utils, layers, models, activations,
 from keras.layers.normalization import BatchNormalization
 # endregion
 
-def model(amountOfClasses, shapeIn, callbacks, train_ds, val_ds, epochs, modelName):
+def model(amountOfClasses, shapeIn):
     ksize = (10,10)
     stride = (1,1)
     l2_lambda = 0.0001
@@ -56,29 +56,13 @@ def model(amountOfClasses, shapeIn, callbacks, train_ds, val_ds, epochs, modelNa
 
     
     ####################################################################
-    # Compile and fit
+    # Compile
     ####################################################################
     model.compile(
-            keras.optimizers.Adam(lr=1e-5),
+            optimizer='adam',
             loss=tf.losses.SparseCategoricalCrossentropy(from_logits=True),
             metrics=['accuracy']
         )
-                  
-    history = model.fit(
-            train_ds,
-            validation_data=val_ds,
-            verbose=1,
-            epochs=epochs,
-            callbacks=[callbacks[1]]
-            )
     ####################################################################
     
-    ####################################################################
-    # Callback
-    # only if you are using callback[0]
-    ####################################################################
-    # The model weights (that are considered the best) are loaded into the model.
-    # model.load_weights(modelName + "/checkpoint")
-    ####################################################################
-    
-    return model, history
+    return model

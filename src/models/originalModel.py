@@ -20,7 +20,7 @@ from tensorflow.keras import (layers, models, activations,
                               optimizers, regularizers)
 # endregion
 
-def model(amountOfClasses, shapeIn, callbacks, train_ds, val_ds, epochs, modelName):
+def model(amountOfClasses, shapeIn):
     ####################################################################
     # Defining the model
     ####################################################################
@@ -49,28 +49,13 @@ def model(amountOfClasses, shapeIn, callbacks, train_ds, val_ds, epochs, modelNa
     ####################################################################
     
     ####################################################################
-    # Compile and fit
+    # Compile
     ####################################################################
     model.compile(
             optimizer='adam',
             loss=tf.losses.SparseCategoricalCrossentropy(from_logits=True),
             metrics=['accuracy']
         )
-    history = model.fit(
-            train_ds,
-            validation_data=val_ds,
-            verbose=1,
-            epochs=epochs,
-            callbacks=callbacks
-            )
     ####################################################################
     
-    ####################################################################
-    # Callback
-    # only if you are using callback[0]
-    ####################################################################
-    # The model weights (that are considered the best) are loaded into the model.
-    model.load_weights(modelName + "/checkpoint")
-    ####################################################################
-    
-    return model, history
+    return model

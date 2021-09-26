@@ -310,11 +310,8 @@ class Load(CNN):
         # add the dimension
         img_array = tf.expand_dims(img_array, 0)
         
-        # with tf.device(self.useDevice):
-            # predictions = self.loadedModel.predict(img_array)
-        predictions = [[0,0]]
-        # score = tf.nn.softmax(predictions[0])
-        # print(len(predictions))
+        with tf.device(self.useDevice):
+            predictions = self.loadedModel.predict(img_array)
         score = predictions[0]
         scoreNeutral = score[0]
         scoreSelected = score[1]

@@ -3,8 +3,8 @@
 # File:			callerTrainCNN.py
 # Organization:	University of twente
 # Group:		CAES
-# Date:			31-07-2021
-# Version:		1.0.0
+# Date:			16-10-2021
+# Version:		2.0.0
 # Author:		Matthijs Souilljee, s2211246
 # Education:	EMSYS msc.
 ############################################################################
@@ -22,6 +22,8 @@ import getopt
 from logic import CNN
 from logic import logo
 from logic import str2bool
+from logic import errorHandling
+from logic import datatypes
 # endregion
 
 
@@ -46,6 +48,9 @@ def helpPrinterCNN():
     print("\t -t, --threads: amount of threads used during training")
     print("\t--GPU: use GPU for training")
     print("\t--CPU: use CPU for training")
+    print("\t-NS: binary classification of neutral and soft sweep")
+    print("\t-NHS: multi-class classification of neutral, hard sweep and soft sweep")
+    print("\t-NH: binary classification of neutral and hard sweep")
     print("\t -a, --modelDesign: name of py file where the required model is defined\n" +
         "\t !advanced option NOT REQUIRED (will default to correct model)!")
 
@@ -69,8 +74,8 @@ def main(argv):
     mod = ''
     design = 'originalModel'
     threads = '' 
-    CPU = False
-    GPU = False
+    hardware = datatypes.Hardware.CPU
+    classification = datatypes.Classification.NH
 
     ########################################################################
     # get all the arguments from the commandline
@@ -79,7 +84,8 @@ def main(argv):
         opts, ars = getopt.getopt(argv, "hm:d:y:x:b:e:a:t:",
                                   ["model=", "directory=", "imgHeight=",
                                    "imgWidth=", "batchSize=", "epoch=",
-                                   "modelDesign=", "threads=", "GPU", "CPU"])
+                                   "modelDesign=", "threads=", "GPU", "CPU",
+                                   "NS", "NH", "NHS"])
     except getoptError:
         helpPrinterCNN()
         sys.exit(2)
@@ -104,34 +110,35 @@ def main(argv):
         elif opt in ("-t", "--threads"):
             threads = arg
         elif opt in ("--CPU"):
-            CPU = True
+            errorHandling.ErrorHandling.HardwareCheck(hardware)
+            hardware = datatypes.Hardware.CPU
         elif opt in ("--GPU"):
-            GPU = True
+            errorHandling.ErrorHandling.HardwareCheck(hardware)
+            hardware = datatypes.Hardware.GPU
+        elif opt in ("--NS"):
+            errorHandling.ErrorHandling.ClassificationCheck(classification)
+            classification = datatypes.Classification.NS
+        elif opt in ("--NH"):
+            errorHandling.ErrorHandling.ClassificationCheck(classification)
+            classification = datatypes.Classification.NH
+        elif opt in ("--NHS"):
+            errorHandling.ErrorHandling.ClassificationCheck(classification)
+            classification = datatypes.Classification.NHS
 
     ########################################################################
     # check if all parameters are filled in
     ########################################################################
-    if (len(direc) == 0 or len(imgH) == 0 or len(imgW) == 0 or
-        len(batchS) == 0 or len(ep) == 0 or len(mod) == 0 or
-        len(threads) == 0):
-        helpPrinterCNN()
-        print("ERROR: not all fields are filled in!")
-        sys.exit(2)
-
-    if (int(float(batchS)) <= 0 or int(float(imgW)) <= 0 or
-        int(float(imgH)) <= 0 or int(float(ep)) <= 0 or 
-        int(threads) <= 0):
-            print("ERROR: some values are zero or smaller then zero")
-            sys.exit(2)
-
+    errorHandling.ErrorHandling.FieldFilledInCheck(
+        direc, imgH, imgW, batchS, ep, mod, threads
+    )
+    errorHandling.ErrorHandling.GreaterThenZeroCheck(
+        batchS, imgW, imgH, ep, threads
+    )
+    errorHandling.ErrorHandling.ClassificationSelected(classification)
+    errorHandling.ErrorHandling.HardwareSelected(hardware)    
     if (design != "ModelDesignC3F32EL1S32_"):
         print("ADVANCED OPTION FILLED IN, MODEL SELECTED: " + str(design))
     
-    if (not((CPU and GPU == False) or 
-        (CPU == False and GPU))):
-        print("ERROR: Selected none or multiple hardware settings")
-        print("only use one --GPU or --CPU")
-        sys.exit(1)
     ########################################################################
     # call the code which really does the work
     ########################################################################
@@ -140,7 +147,7 @@ def main(argv):
                               int(float(batchS)),
                               int(float(ep)),
                               str(design), int(threads),
-                              CPU, GPU)
+                              hardware, classification)
     trainModel.traingModel()
 
 

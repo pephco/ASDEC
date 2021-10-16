@@ -272,7 +272,7 @@ def main(argv):
                                 ' -d out '))
 
     # call the cleaning script
-    for className in classification.fromStr:
+    for className in datatypes.Classification.fromStr(classification):
         subprocess.call(shlex.split(
             './src/scripts/cleanCompleteTrain.sh' +
             ' -i ' + str(className) +
@@ -302,9 +302,9 @@ def main(argv):
     timeDataGeneration = time.time() - startTime
     startTime = time.time()
     ########################################################################
-    filesToRun = [[]]
+    filesToRun = []
     classesFound = []
-    processes = [[]]
+    processes = []
     print("Start conversion to bitmaps")
     # explore the folder for all files to run
     with os.scandir(str(rawFilesPath)) as folder:
@@ -312,11 +312,12 @@ def main(argv):
             tempFiles = []
             if subfolder.is_dir():
                 classesFound.append(str(subfolder.name))
-                for textFile in subfolder:
-                    if textFile.is_file():
-                        tempFiles.append(str(textFile.path))
+                with os.scandir(str(subfolder.path)) as content:
+                    for file in content:
+                        if file.is_file():
+                            tempFiles.append(str(file.path))
             filesToRun.append(tempFiles)
-    errorHandling.ErrorHandling.ClassesCheck(classesFound, classification.fromStr)
+    errorHandling.ErrorHandling.ClassesCheck(classesFound, datatypes.Classification.fromStr(classification))
     classIndex = 0
     for folders in filesToRun:
         startedIndex = 0
@@ -324,7 +325,7 @@ def main(argv):
             startedIndex += 1
             p = subprocess.Popen("python3 src/callerBitmap.py" + ' -i ' + files +
                             ' -o ' + str(folderName) +
-                            '/img/' + classification.fromStr[classIndex] + '/img' + str(startedIndex) + "_" +
+                            '/img/' + datatypes.Classification.fromStr(classification)[classIndex] + '/img' + str(startedIndex) + "_" +
                             ' -w ' + str(windowEnb) +
                             ' -l ' + str(windowLength) +
                             ' -s ' + str(stepSize) +
@@ -340,22 +341,27 @@ def main(argv):
                 for p in processes:
                     if p.wait() != 0:
                         print("ERROR: There was an error in thread timing")
-        if (startedIndex == 0):
+        if (len(folders) == 0):
             print("WARNING: No txt files found do in " + str(folders))
-
-    # debugging now
-    print("debugging session")
-    sys.exit(1)                
+              
     # open a single file to get the number of individuals
-    if (len(filesToRunNeutral) > 0):
-        getIndividuals = filesToRunNeutral[0]
-    elif (len(filesToRunSelection) > 0):
-        getIndividuals = filesToRunSelection[0]
-    else:
+    getIndividuals = ""
+    for folders in filesToRun:
+        for files in folders:
+            if (len(files) != 0):
+                getIndividuals = files[0]
+                break
+        if (len(getIndividuals) != 0):
+            break
+
+    if (len(getIndividuals) == 0):
         getIndividuals = ""
         print("ERROR: No files found")
         sys.exit(1)
     
+    # conversion from vcf files to ms files is done in the bitmap converter
+    # meaning that when a vcf file is found there always exists a vcf.ms variant
+    # of the same file.
     if getIndividuals.endswith(".vcf"):
         getIndividuals = getIndividuals + ".ms"
     msFile = open(getIndividuals, 'r')

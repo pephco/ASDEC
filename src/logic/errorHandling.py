@@ -14,6 +14,7 @@
 from logic import datatypes
 import sys
 import os
+from logic import str2bool
 
 class ErrorHandling(object):
     @staticmethod
@@ -82,6 +83,22 @@ class ErrorHandling(object):
 
     @staticmethod
     def ClassesCheck(found, expected):
-        if found != expected:
+        if set(found) != set(expected):
             print("ERROR: mismatch in expected and found classes")
+            print("Found classes: " + str(found))
+            print("Expected classes: " + str(expected))
             sys.exit(1)
+
+    @staticmethod
+    def FieldFilledInCheck(toCheck):
+        for check in toCheck:
+            if (len(check) == 0):
+                print("ERROR: not all fields are filled in!")
+                sys.exit(1) 
+
+    @staticmethod 
+    def GreaterThenZeroCheck(toCheck):
+        for check in toCheck:
+            if (int(float(check)) <= 0):
+                print("ERROR: some values are zero or smaller then zero")
+                sys.exit(1) 

@@ -14,12 +14,16 @@
 
 
 # region import packages
+from PIL.Image import HAMMING
 from tensorflow.keras.models import Sequential
 import numpy as np
 import os
 import tensorflow as tf
 import sys
 import math
+
+from logic import datatypes
+from logic import errorHandling
 
 from tensorflow import keras
 from tensorflow.keras import (layers, models, activations,
@@ -38,37 +42,31 @@ from contextlib import redirect_stdout
 
 
 class CNN:
-    ########################################################################
-    # class attributes
-    ########################################################################
-    # region
-    CONST_classNames = ["neutral", "selection"]
-    # endregion
 
     ########################################################################
     # class constructor
     ########################################################################
     # region
-    def __init__(self, modelName, directory, threads, CPU, GPU):
+    def __init__(self, modelName, directory, threads, hardware):
         tf.config.threading.set_intra_op_parallelism_threads(math.floor(int(threads)/2))
         tf.config.threading.set_inter_op_parallelism_threads(math.ceil(int(threads)/2))
         self.modelName = modelName
         self.directory = directory
-        self.__CheckDevice(CPU, GPU)
+        self.__CheckDevice(hardware)
     # endregion
     
     ########################################################################
     # private methods
     ########################################################################
     # region
-    def __CheckDevice(self, CPU, GPU):
+    def __CheckDevice(self, hardware):
         print("Checking installed devices")
         CPUDevices = tf.config.list_logical_devices('CPU')
         GPUDevices = tf.config.list_logical_devices('GPU')
         try:
-            if CPU and len(CPUDevices) > 0:
+            if hardware == datatypes.Hardware.CPU and len(CPUDevices) > 0:
                 self.useDevice = '/CPU:0'
-            elif GPU and len(GPUDevices) > 0:
+            elif hardware == datatypes.Hardware.GPU and len(GPUDevices) > 0:
                 print("RUNNING ON GPU")
                 self.useDevice = '/GPU:0'
             else:
@@ -97,8 +95,9 @@ class Training(CNN):
     # region
     def __init__(self, modelName, imgHeight, imgWidth, directory, 
                 batch_size, epochs, modelDesignName, threads, 
-                CPU, GPU):
-        CNN.__init__(self, modelName, directory, threads, CPU, GPU)
+                hardware, classification):
+        self.__classCheck(classification)
+        CNN.__init__(self, modelName, directory, threads, hardware)
         self.batch_size = batch_size
         self.epochs = epochs
         self.modelName = modelName
@@ -106,7 +105,6 @@ class Training(CNN):
         self.imgWidth = imgWidth
         self.__setDataTrain()
         self.__setDataVal()
-        self.__classCheck()
         # the same as: from models import originalModel as modelDesign
         self.modelDesign = getattr(__import__("models",
                                               fromlist=[
@@ -183,14 +181,12 @@ class Training(CNN):
             seed=123,
             batch_size=self.batch_size)
 
-    def __classCheck(self):
+    def __classCheck(self, classification):
         print("classes expected: " +
-              str(CNN.CONST_classNames[0]) + " "
-              + str(CNN.CONST_classNames[1]))
-        print("encountered classes " +
-              str(self.train_ds.class_names[0]) + " " +
-              str(self.train_ds.class_names[1]))
-        if CNN.CONST_classNames != self.train_ds.class_names:
+              datatypes.Classification.fromStr(classification))
+        print("encountered classes " + 
+              str(self.train_ds.class_names))
+        if set(datatypes.Classification.fromStr(classification)) != set(self.train_ds.class_names):
             raise Exception("classes are not equal")
 
     def __summary(self):

@@ -12,30 +12,30 @@ helpFunction()
     echo "$0"
     echo "-d Directory to start creation"
     echo -e "\t-d Directory path where to create the file structure"
+    echo -e "\t-i Class name to create folders for"
     exit 1
 }
 
-while getopts "hd:" flag
+while getopts "hd:i:" flag
 do
     case "${flag}" in
         d) directory=${OPTARG};;
+        i) className=${OPTARG};;
         h) helpFunction ;;
         ?) helpFunction ;;
     esac
 done
 
-if [ -z "$directory" ]
+if [ -z "$directory" ] || [ -z "$className" ]
 then
     echo "Some or all of the parameters are empty";
     helpFunction
 fi
 
 echo "creating new file structure";
-mkdir $directory/
-mkdir $directory/img
-mkdir $directory/img/neutral
-mkdir $directory/img/selection
-mkdir $directory/raw
-mkdir $directory/raw/neutral
-mkdir $directory/raw/selection 
+mkdir -p $directory/
+mkdir -p $directory/img
+mkdir -p $directory/img/$className
+mkdir -p $directory/raw
+mkdir -p $directory/raw/$className
 echo "Done";

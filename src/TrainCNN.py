@@ -272,9 +272,11 @@ def main(argv):
                                 ' -d out '))
 
     # call the cleaning script
-    subprocess.call(shlex.split(
-        './src/scripts/cleanCompleteTrain.sh' +
-        ' -d ' + str(folderName)))
+    for className in classification.fromStr:
+        subprocess.call(shlex.split(
+            './src/scripts/cleanCompleteTrain.sh' +
+            ' -i ' + str(className) +
+            ' -d ' + str(folderName)))
     ########################################################################
     # If no raw files are already given generate them
     ### time ###
@@ -340,7 +342,10 @@ def main(argv):
                         print("ERROR: There was an error in thread timing")
         if (startedIndex == 0):
             print("WARNING: No txt files found do in " + str(folders))
-                    
+
+    # debugging now
+    print("debugging session")
+    sys.exit(1)                
     # open a single file to get the number of individuals
     if (len(filesToRunNeutral) > 0):
         getIndividuals = filesToRunNeutral[0]

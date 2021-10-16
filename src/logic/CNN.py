@@ -182,7 +182,7 @@ class Training(CNN):
             seed=123,
             batch_size=self.batch_size)
 
-    def __classCheck(self, classification):
+    def __classCheck(self):
         print("classes expected: " +
               str(datatypes.Classification.classStr(self.classification)))
         print("encountered classes " + 

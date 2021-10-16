@@ -80,6 +80,15 @@ def HelpPrinterTrain():
     print("\t-p: output path + model name (string) (def: tempModel)")
     print("\t\t--force: save even if model is already present (bool) (def: false)")
     print("\n")
+    print("Classification type settings (select one):")
+    print("\t-NS: binary classification of neutral and soft sweep")
+    print("\t-NHS: multi-class classification of neutral, hard sweep and soft sweep")
+    print("\t-NH: binary classification of neutral and hard sweep")
+    print("\n")
+    print("Hardware to use (select one)")
+    print("\t--GPU: use GPU for training")
+    print("\t--CPU: use CPU for training")
+    print("\n")
     print("Advanced settings !Please use with caution!:")
     print("Two advanced options are available -q considers model designs.")
     print("These designs are located in the /src/models folder please do not")
@@ -97,8 +106,6 @@ def HelpPrinterTrain():
     print("General settings:")
     print("\t-r: Perform cleanup (bool) (def: true)")
     print("\t-z: Amount of threads used (int) (def: 5)")
-    print("\t--GPU: use GPU for training")
-    print("\t--CPU: use CPU for training")
     print("\n")
     print("Extra training settings:")
     print("These specify a maximal loss and mininal acc, used for rapid")
@@ -111,10 +118,7 @@ def HelpPrinterTrain():
     print("\t-x: parsing vcf file memory consumption (input * 2) (float) (def: 10)")
     print("\t-X: total chromosome length (float) (def 100000)")
     print("\n")
-    print("Classification type settings (select one):")
-    print("\t-NS: binary classification of neutral and soft sweep (def)")
-    print("\t-NHS: multi-class classification of neutral, hard sweep and soft sweep")
-    print("\t-NH: binary classification of neutral and hard sweep")
+
 
 def main(argv):
     ########################################################################
@@ -296,74 +300,47 @@ def main(argv):
     timeDataGeneration = time.time() - startTime
     startTime = time.time()
     ########################################################################
-    filesToRunNeutral = []
-    filesToRunSelection = []
-    processes = []
-    # generate neutral images
-    print("Start conversion for the neutral files to bitmaps")
+    filesToRun = [[]]
+    classesFound = []
+    processes = [[]]
+    print("Start conversion to bitmaps")
     # explore the folder for all files to run
-    with os.scandir(str(rawFilesPath) + "/neutral/") as folder:
-        for textFile in folder:
-            if textFile.is_file():
-                filesToRunNeutral.append(str(textFile.path))
-    with os.scandir(str(rawFilesPath) + "/selection/") as folder:
-        for textFile in folder:
-            if textFile.is_file():
-                filesToRunSelection.append(str(textFile.path))
-    baseIndex = 0
-    testIndex = 0
-    startedIndex = 0
-    for files in filesToRunNeutral:
-        startedIndex += 1
-        p = subprocess.Popen("python3 src/callerBitmap.py" + ' -i ' + files +
-                           ' -o ' + str(folderName) +
-                           '/img/neutral/BASE_IMAGES' + str(baseIndex) + "_" +
-                           ' -w ' + str(windowEnb) +
-                           ' -l ' + str(windowLength) +
-                           ' -s ' + str(stepSize) +
-                           ' -c ' + str(centerEnb) +
-                           ' -z ' + str(centerRange) +
-                           ' -m ' + str(multiplication) +
-                           ' -p ' + str(extractionPoint) +
-                           ' -x ' + str(memorySize) 
-                           , stdout=subprocess.PIPE, shell=True)
-        processes.append(p)
-        if int(threads) <= startedIndex:
-            startedIndex = 0
-            for p in processes:
-                if p.wait() != 0:
-                    print("ERROR: There was an error in thread timing")
-        baseIndex += 1
-    if (baseIndex == 0):
-        print("WARNING: No txt files found do you have the subfolder neutral under the given path")
-                
-    for files in filesToRunSelection:
-        startedIndex += 1
-        p = subprocess.Popen("python3 src/callerBitmap.py" + ' -i ' + files +
-                           ' -o ' + str(folderName) +
-                           '/img/selection/TEST_IMAGES' + str(testIndex) + "_" +
-                           ' -w ' + str(windowEnb) +
-                           ' -l ' + str(windowLength) +
-                           ' -s ' + str(stepSize) +
-                           ' -c ' + str(centerEnb) +
-                           ' -z ' + str(centerRange) +
-                           ' -m ' + str(multiplication) +
-                           ' -p ' + str(extractionPoint) +
-                           ' -x ' + str(memorySize)
-                           , stdout=subprocess.PIPE, shell=True)
-        processes.append(p)
-        if int(threads) <= startedIndex:
-            startedIndex = 0
-            for p in processes:
-                if p.wait() != 0:
-                    print("ERROR: There was an error in thread timing")
-        testIndex += 1
-    if (testIndex == 0):
-        print("WARNING: No txt files found do you have the subfolder selection under the given path")
-     
-    for p in processes:
-        if p.wait() != 0:
-            print("There was an error")
+    with os.scandir(str(rawFilesPath)) as folder:
+        for subfolder in folder:
+            tempFiles = []
+            if subfolder.is_dir():
+                classesFound.append(str(subfolder.name))
+                for textFile in subfolder:
+                    if textFile.is_file():
+                        tempFiles.append(str(textFile.path))
+            filesToRun.append(tempFiles)
+    errorHandling.ErrorHandling.ClassesCheck(classesFound, classification.fromStr)
+    classIndex = 0
+    for folders in filesToRun:
+        startedIndex = 0
+        for files in folders:
+            startedIndex += 1
+            p = subprocess.Popen("python3 src/callerBitmap.py" + ' -i ' + files +
+                            ' -o ' + str(folderName) +
+                            '/img/' + classification.fromStr[classIndex] + '/img' + str(startedIndex) + "_" +
+                            ' -w ' + str(windowEnb) +
+                            ' -l ' + str(windowLength) +
+                            ' -s ' + str(stepSize) +
+                            ' -c ' + str(centerEnb) +
+                            ' -z ' + str(centerRange) +
+                            ' -m ' + str(multiplication) +
+                            ' -p ' + str(extractionPoint) +
+                            ' -x ' + str(memorySize) 
+                            , stdout=subprocess.PIPE, shell=True)
+            processes.append(p)
+            if int(threads) <= startedIndex:
+                startedIndex = 0
+                for p in processes:
+                    if p.wait() != 0:
+                        print("ERROR: There was an error in thread timing")
+        if (startedIndex == 0):
+            print("WARNING: No txt files found do in " + str(folders))
+                    
     # open a single file to get the number of individuals
     if (len(filesToRunNeutral) > 0):
         getIndividuals = filesToRunNeutral[0]

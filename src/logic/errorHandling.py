@@ -79,3 +79,9 @@ class ErrorHandling(object):
             print("ERROR: no hardware option provided")
             print("only use one --GPU or --CPU")
             sys.exit(1)
+
+    @staticmethod
+    def ClassesCheck(found, expected):
+        if found != expected:
+            print("ERROR: mismatch in expected and found classes")
+            sys.exit(1)

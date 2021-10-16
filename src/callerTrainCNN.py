@@ -129,10 +129,10 @@ def main(argv):
     # check if all parameters are filled in
     ########################################################################
     errorHandling.ErrorHandling.FieldFilledInCheck(
-        direc, imgH, imgW, batchS, ep, mod, threads
+        [direc, imgH, imgW, batchS, ep, mod, threads]
     )
     errorHandling.ErrorHandling.GreaterThenZeroCheck(
-        batchS, imgW, imgH, ep, threads
+        [batchS, imgW, imgH, ep, threads]
     )
     errorHandling.ErrorHandling.ClassificationSelected(classification)
     errorHandling.ErrorHandling.HardwareSelected(hardware)    

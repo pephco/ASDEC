@@ -272,7 +272,7 @@ def main(argv):
                                 ' -d out '))
 
     # call the cleaning script
-    for className in datatypes.Classification.fromStr(classification):
+    for className in datatypes.Classification.classStr(classification):
         subprocess.call(shlex.split(
             './src/scripts/cleanCompleteTrain.sh' +
             ' -i ' + str(className) +
@@ -317,7 +317,7 @@ def main(argv):
                         if file.is_file():
                             tempFiles.append(str(file.path))
             filesToRun.append(tempFiles)
-    errorHandling.ErrorHandling.ClassesCheck(classesFound, datatypes.Classification.fromStr(classification))
+    errorHandling.ErrorHandling.ClassesCheck(classesFound, datatypes.Classification.classStr(classification))
     classIndex = 0
     for folders in filesToRun:
         startedIndex = 0
@@ -325,7 +325,7 @@ def main(argv):
             startedIndex += 1
             p = subprocess.Popen("python3 src/callerBitmap.py" + ' -i ' + files +
                             ' -o ' + str(folderName) +
-                            '/img/' + datatypes.Classification.fromStr(classification)[classIndex] + '/img' + str(startedIndex) + "_" +
+                            '/img/' + datatypes.Classification.classStr(classification)[classIndex] + '/img' + str(startedIndex) + "_" +
                             ' -w ' + str(windowEnb) +
                             ' -l ' + str(windowLength) +
                             ' -s ' + str(stepSize) +
@@ -349,7 +349,7 @@ def main(argv):
     for folders in filesToRun:
         for files in folders:
             if (len(files) != 0):
-                getIndividuals = files[0]
+                getIndividuals = files
                 break
         if (len(getIndividuals) != 0):
             break
@@ -389,7 +389,8 @@ def main(argv):
                              '-x' + str(windowLength),
                              '-a' + str(design),
                              '-t' + str(threads),
-                             inputLineTraining])
+                             datatypes.Hardware.fromStr(hardware),
+                             datatypes.Classification.fromStr(classification)])
         # check the acc
         openfile = open(str(model) + "/TrainResultsAcc.txt", 'r')
         for lineIndex, line in enumerate(openfile):
@@ -463,10 +464,8 @@ def main(argv):
             print("-z " + str(threads))
             if force:
                 print("--force")
-            if CPU:
-                print("--CPU")
-            if GPU:
-                print("--GPU")
+            print(datatypes.Hardware.fromStr(hardware))
+            print(datatypes.Classification.fromStr(classification))
 
     totalTime = (timeInitialSetup + timeDataGeneration + timeImageGeneration
                  + timeTrain + timeCleanUp)

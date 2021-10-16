@@ -24,9 +24,9 @@ class Hardware(Enum):
         if (label == Hardware.NULL):
             return "NULL"
         elif (label == Hardware.CPU):
-            return "CPU"
+            return "--CPU"
         elif (label == Hardware.GPU):
-            return "GPU"
+            return "--GPU"
         else:
             raise NotImplementedError
 
@@ -38,6 +38,19 @@ class Classification(Enum):
 
     @staticmethod
     def fromStr(label):
+        if (label == Classification.NULL):
+            return "NULL"
+        elif (label == Classification.NS):
+            return "--NS"
+        elif (label == Classification.NH):
+            return "--NH"
+        elif (label == Classification.NHS):
+            return "--NHS"
+        else:
+            raise NotImplementedError
+
+    @staticmethod
+    def classStr(label):
         if (label == Classification.NULL):
             return "NULL"
         elif (label == Classification.NS):

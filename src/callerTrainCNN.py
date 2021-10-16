@@ -74,8 +74,8 @@ def main(argv):
     mod = ''
     design = 'originalModel'
     threads = '' 
-    hardware = datatypes.Hardware.CPU
-    classification = datatypes.Classification.NH
+    hardware = datatypes.Hardware.NULL
+    classification = datatypes.Classification.NULL
 
     ########################################################################
     # get all the arguments from the commandline

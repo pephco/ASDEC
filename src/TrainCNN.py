@@ -3,8 +3,8 @@
 # File:			TrainCNN.py
 # Organization:	University of twente
 # Group:		CAES
-# Date:			31-07-2021
-# Version:		1.0.0
+# Date:			15-10-2021
+# Version:		2.0.0
 # Author:		Matthijs Souilljee, s2211246
 # Education:	EMSYS msc.
 ############################################################################
@@ -29,13 +29,14 @@ import re
 from subprocess import Popen, PIPE
 
 # import my own files
+from logic import datatypes
+from logic import errorHandling
 import callerBitmap
 import callerTrainCNN
 from logic import randomGenerator
 from logic import str2bool
 from logic import logo
 # endregion
-
 
 def HelpPrinterTrain():
     logo.logo()
@@ -109,8 +110,11 @@ def HelpPrinterTrain():
     print("VCF parsing settings:")
     print("\t-x: parsing vcf file memory consumption (input * 2) (float) (def: 10)")
     print("\t-X: total chromosome length (float) (def 100000)")
-    
-
+    print("\n")
+    print("Classification type settings (select one):")
+    print("\t-NS: binary classification of neutral and soft sweep (def)")
+    print("\t-NHS: multi-class classification of neutral, hard sweep and soft sweep")
+    print("\t-NH: binary classification of neutral and hard sweep")
 
 def main(argv):
     ########################################################################
@@ -144,8 +148,8 @@ def main(argv):
     rawFilesPath = ''
     force = False
     threads = '5'
-    CPU = False
-    GPU = False
+    hardware = datatypes.Hardware.NULL
+    classification = datatypes.Classification.NULL
     # extra training settings
     minAcc = 0
     maxLoss = sys.float_info.max
@@ -160,7 +164,7 @@ def main(argv):
     try:
         opts, ars = getopt.getopt(argv,
                                   "ha:b:c:d:e:f:g:i:j:k:l:m:n:o:p:q:r:t:u:v:w:y:x:X:z:",
-                                  ["force", "GPU", "CPU"])
+                                  ["force", "GPU", "CPU", "NS", "NH", "NHS"])
     except getoptError:
         HelpPrinterTrain()
         sys.exit(2)
@@ -221,9 +225,20 @@ def main(argv):
         elif opt in ("--force"):
             force = True
         elif opt in ("--CPU"):
-            CPU = True
+            errorHandling.ErrorHandling.HardwareCheck(hardware)
+            hardware = datatypes.Hardware.CPU
         elif opt in ("--GPU"):
-            GPU = True
+            errorHandling.ErrorHandling.HardwareCheck(hardware)
+            hardware = datatypes.Hardware.GPU
+        elif opt in ("--NS"):
+            errorHandling.ErrorHandling.ClassificationCheck(classification)
+            classification = datatypes.Classification.NS
+        elif opt in ("--NH"):
+            errorHandling.ErrorHandling.ClassificationCheck(classification)
+            classification = datatypes.Classification.NH
+        elif opt in ("--NHS"):
+            errorHandling.ErrorHandling.ClassificationCheck(classification)
+            classification = datatypes.Classification.NHS
     
     ########################################################################
     # check if some options are filled in
@@ -231,44 +246,14 @@ def main(argv):
     startTime = time.time()
     ########################################################################
     # check if there is enough data to perform the inference
-    if (((int(startMs) == 0 and int(endMs) == 0 and int(startMssel) == 0
-        and int(endMssel) == 0 and len(rawFilesPath) == 0) or 
-        (int(startMs) > int(endMs) or int(startMssel) > int(endMssel))) and 
-        len(rawFilesPath) == 0):
-        HelpPrinterTrain()
-        print("ERROR: Not enough data to train a model")
-        sys.exit(1)
-    
-    if (triesCount < 1):
-        print("ERROR: Count should atleast be 1")
-        sys.exit(1)
-        
-    if (int(threads) < 1):
-        print("ERROR: threads can not be zero or smaller then zero")
-        sys.exit(1)
-        
-    # and check if model already exists, have to force overwrite
-    if (os.path.exists(model) and not force):
-        print("ERROR: Model already present and no overwrite flag is provided")
-        print("If overwrite is desired add --force flag")
-        sys.exit(1)
-        
-    # check if the trajectory folder exists before running the code
-    if (int(startMssel) > 0):
-        if (not os.path.exists("trajectory_files/")):
-            print("ERROR: no folder called trajectory files, please")
-            print("run: ./tools/setupTrajectoryFiles.sh")
-            sys.exit(1)
-    
-    # Check hardware selection
-    if (CPU and GPU == False):
-        inputLineTraining = "--CPU"
-    elif (CPU == False and GPU):
-        inputLineTraining = "--GPU"
-    else:
-        print("ERROR: Selected none or multiple hardware settings")
-        print("only use one --GPU or --CPU")
-        sys.exit(1)
+    errorHandling.ErrorHandling.InputDataCheck(startMs, endMs, startMssel, endMssel, rawFilesPath)
+    errorHandling.ErrorHandling.TryCountCheck(triesCount)
+    errorHandling.ErrorHandling.ThreadNumberCheck(threads)
+    errorHandling.ErrorHandling.ModelExistsCheck(model, force)    
+    if(len(rawFilesPath) == 0):
+        errorHandling.ErrorHandling.TrajectoryExistsFolderCheck()
+    errorHandling.ErrorHandling.ClassificationSelected(classification)
+    errorHandling.ErrorHandling.HardwareSelected(hardware)    
     ########################################################################
     # run all the scripts and python code
     # setup the file structure

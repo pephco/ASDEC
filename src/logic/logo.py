@@ -20,4 +20,4 @@ def logo():
     print("  / ____ \ ____) | |__| | |___| |____ ")
     print(" /_/    \_\_____/|_____/|______\_____|")
     print("ASDEC, Accurate Sweep Detection Enabled by a CNN")
-    print("This is version 1.1 (released in September 2021)")
+    print("This is version 1.2 (released in October 2021)")

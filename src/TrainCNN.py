@@ -342,7 +342,8 @@ def main(argv):
                     if p.wait() != 0:
                         print("ERROR: There was an error in thread timing")
         if (len(folders) == 0):
-            print("WARNING: No txt files found do in " + str(folders))
+            print("ERROR: No txt files found do in " + str(folders))
+            sys.exit(1)
               
     # open a single file to get the number of individuals
     getIndividuals = ""

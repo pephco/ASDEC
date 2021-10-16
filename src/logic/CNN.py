@@ -96,15 +96,16 @@ class Training(CNN):
     def __init__(self, modelName, imgHeight, imgWidth, directory, 
                 batch_size, epochs, modelDesignName, threads, 
                 hardware, classification):
-        self.__classCheck(classification)
         CNN.__init__(self, modelName, directory, threads, hardware)
         self.batch_size = batch_size
         self.epochs = epochs
         self.modelName = modelName
         self.imgHeight = imgHeight
         self.imgWidth = imgWidth
+        self.classification = classification
         self.__setDataTrain()
         self.__setDataVal()
+        self.__classCheck()
         # the same as: from models import originalModel as modelDesign
         self.modelDesign = getattr(__import__("models",
                                               fromlist=[
@@ -137,7 +138,7 @@ class Training(CNN):
         # This step includes the compiling and fitting of the model design
         with tf.device(self.useDevice):
             self.model = self.modelDesign.model(
-                len(CNN.CONST_classNames), sizeImage)
+                len(datatypes.Classification.classStr(self.classification)), sizeImage)
         
             self.history = self.model.fit(
                 self.train_ds,
@@ -183,10 +184,10 @@ class Training(CNN):
 
     def __classCheck(self, classification):
         print("classes expected: " +
-              datatypes.Classification.fromStr(classification))
+              str(datatypes.Classification.classStr(self.classification)))
         print("encountered classes " + 
               str(self.train_ds.class_names))
-        if set(datatypes.Classification.fromStr(classification)) != set(self.train_ds.class_names):
+        if set(datatypes.Classification.classStr(self.classification)) != set(self.train_ds.class_names):
             raise Exception("classes are not equal")
 
     def __summary(self):
@@ -209,7 +210,7 @@ class Training(CNN):
             with redirect_stdout(f):
                 print("amount of files used")
                 print("validation split is set to 0.2\n")
-                for i in (CNN.CONST_classNames):
+                for i in (datatypes.Classification.classStr(self.classification)):
                     DIR = self.directory + str(i)
                     amount = str(len([name for name in os.listdir(DIR) if
                                       os.path.isfile(os.path.join(DIR, name))

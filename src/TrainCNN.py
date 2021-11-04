@@ -472,6 +472,8 @@ def main(argv):
     totalTime = (timeInitialSetup + timeDataGeneration + timeImageGeneration
                  + timeTrain + timeCleanUp)
 
+    ########################################################################
+    # Save the commandline arguments used for generation
     with open((model + "/TimingResults.txt"), 'w') as f:
         with redirect_stdout(f):
             print("Time summary in seconds\n")

@@ -4,7 +4,7 @@
 # Organization:	University of twente
 # Group:		CAES
 # Date:			31-07-2021
-# Version:		1.0.0
+# Version:		2.0.0
 # Author:		Matthijs Souilljee, s2211246
 # Education:	EMSYS msc.
 ############################################################################
@@ -469,7 +469,7 @@ def main(argv):
             ' -y ' + str(extractionPoint) +
             ' -z ' + str(memorySize) + 
             ' -Z ' + str(chromosomeLength) +
-            ' -X ' + str(inputLineTraining)))
+            ' -X ' + str(Classification.fromStr(classification))))
 
         if(logSummary != "NULL"):
             ### time ###
@@ -495,7 +495,42 @@ def main(argv):
         subprocess.call(shlex.split(
             './src/scripts/deleteFolder.sh' +
             ' -d ' + str(folderName)))
-    
+
+    ########################################################################
+    # save terminal command used for creation
+    with open((logSummary + 'info/CommandLine.txt'), 'w') as f:
+        with redirect_stdout(f):
+            print("-a " + str(startMs))
+            print("-b " + str(endMs))
+            print("-c " + str(startMssel))
+            print("-d " + str(endMssel))
+            print("-e " + str(numberOfPopulations))
+            print("-f " + str(individuals))
+            print("-g " + str(windowEnb))
+            print("-i " + str(windowLength))
+            print("-j " + str(stepSize))
+            print("-k " + str(centerEnb))
+            print("-l " + str(centerRange))
+            print("-m " + str(multiplication))
+            print("-n " + str(model))
+            print("-o " + str(logPost))
+            print("-p " + str(logSummary))
+            print("-q " + str(mode))
+            print("-r " + str(parama))
+            print("-s " + str(paramb))
+            print("-t " + str(threads))
+            print("-u " + str(deleteWhenDone))
+            print("-v " + str(stepsPerThread))
+            print("-w " + str(rawFilesPath))
+            print("-x " + str(logPrePost))
+            print("-y " + str(extractionPoint))
+            print("-z " + str(memorySize))
+            print("-Z " + str(chromosomeLength))
+            if search:
+                print("--search")
+            print(Hardware.fromStr(hardware))
+            print(Classification.fromStr(classification))
+
     ########################################################################
     # Save the commandline arguments used for generation
     if(logSummary != "NULL"):
@@ -507,48 +542,12 @@ def main(argv):
         with open((logSummary + 'info/TimeOverview.txt'), 'a') as f:
             with redirect_stdout(f):
                 print("Total clean up time-----------:\t%.5f" %
-                      timeCleanUp)
+                    timeCleanUp)
                 print("Write time to file------------:\t%.5f" %
-                      (time.time() - startTime))
+                    (time.time() - startTime))
                 print("Total time--------------------:\t%.5f" %
-                      (time.time() - completeTime))
-        ############
-    ########################################################################
-        # save terminal command used for creation
-        with open((logSummary + 'info/CommandLine.txt'), 'w') as f:
-            with redirect_stdout(f):
-                print("-a " + str(startMs))
-                print("-b " + str(endMs))
-                print("-c " + str(startMssel))
-                print("-d " + str(endMssel))
-                print("-e " + str(numberOfPopulations))
-                print("-f " + str(individuals))
-                print("-g " + str(windowEnb))
-                print("-i " + str(windowLength))
-                print("-j " + str(stepSize))
-                print("-k " + str(centerEnb))
-                print("-l " + str(centerRange))
-                print("-m " + str(multiplication))
-                print("-n " + str(model))
-                print("-o " + str(logPost))
-                print("-p " + str(logSummary))
-                print("-q " + str(mode))
-                print("-r " + str(parama))
-                print("-s " + str(paramb))
-                print("-t " + str(threads))
-                print("-u " + str(deleteWhenDone))
-                print("-v " + str(stepsPerThread))
-                print("-w " + str(rawFilesPath))
-                print("-x " + str(logPrePost))
-                print("-y " + str(extractionPoint))
-                print("-z " + str(memorySize))
-                print("-Z " + str(chromosomeLength))
-                if search:
-                    print("--search")
-                if CPU:
-                    print("--CPU")
-                if GPU:
-                    print("--GPU")
+                    (time.time() - completeTime))
+
     print("completed running all scripts")
 
 if __name__ == "__main__":

@@ -102,3 +102,25 @@ class ErrorHandling(object):
             if (int(float(check)) <= 0):
                 print("ERROR: some values are zero or smaller then zero")
                 sys.exit(1) 
+
+    @staticmethod
+    def ModelExistsCheck(model):
+        if (str(model) == "NULL"):
+            print("ERROR: Model not specified")
+            sys.exit(1)
+
+    @staticmethod
+    def SavingFilesCheck(toCheck):
+        i = 0
+        for check in toCheck:
+            if (str(check).upper() ==  "NULL"):
+               i += 1
+        if (i == len(toCheck)):
+            print("ERROR: No saving location given")
+            sys.exit(1) 
+    
+    @staticmethod
+    def SearchParametersCheck(setSearchParameter, search):
+       if (setSearchParameter and not search):
+            print("ERROR: When you want to use search mode add --search")
+            sys.exit(1) 

@@ -32,6 +32,9 @@ import callerPostProcessing
 from logic import str2bool
 from logic import logo
 from logic import vcfConversion
+from logic.errorHandling import ErrorHandling
+from logic.datatypes import Hardware
+from logic.datatypes import Classification
 # endregion
 
 
@@ -155,8 +158,8 @@ def main(argv):
     rawFilesPath = ''
     search = False
     setSearchParameter = False
-    CPU = False
-    GPU = False
+    hardware = Hardware.NULL
+    classification = Classification.NULL
     # vcf parsing settings
     memorySize = '10'
     chromosomeLength = '100000'
@@ -244,9 +247,11 @@ def main(argv):
         elif opt in ("--search"):
             search = True
         elif opt in ("--CPU"):
-            CPU = True
+            ErrorHandling.HardwareCheck(hardware)
+            hardware = Hardware.CPU
         elif opt in ("--GPU"):
-            GPU = True
+            ErrorHandling.HardwareCheck(hardware)
+            hardware = Hardware.GPU
         
     ########################################################################
     # check if options are filled in correctly
@@ -256,46 +261,14 @@ def main(argv):
         startTime = time.time()
     ########################################################################
     # check if there is enough data to perform the inference
-    if ((int(startMs) == 0 and int(endMs) == 0 and int(startMssel) == 0
-        and int(endMssel) == 0 and len(rawFilesPath) == 0) or 
-        (int(startMs) > int(endMs) or int(startMssel) > int(endMssel))):
-        HelpPrinterLoad()
-        print("ERROR: Not enough data to perform inference")
-        sys.exit(1)
-    
-    # model not specified
-    if (str(model) == "NULL"):
-        print("ERROR: Model not specified")
-        sys.exit(1)
-        
-    # nothing is being saved
-    if (str(logPrePost) == "NULL" and str(logSummary) == "NULL" 
-        and str(logPost) == "NULL"):
-        print("ERROR: No saving location given")
-        sys.exit(1)
-    
-    # check if search mode items are used without search mode enabled
-    if (setSearchParameter and not search):
-        print("ERROR: When you want to use search mode add --search")
-        sys.exit(1)
-    
-    # check if the trajectory folder exists before running the code
-    if (int(startMssel) > 0):
-        if (not os.path.exists("trajectory_files/")):
-            print("ERROR: no folder called trajectory files, please")
-            print("run: ./tools/setupTrajectoryFiles.sh")
-            sys.exit(1)
-    
-    # Check hardware selection
-    if (CPU and GPU == False):
-        inputLineTraining = "--CPU"
-    elif (CPU == False and GPU):
-        inputLineTraining = "--GPU"
-    else:
-        print("ERROR: Selected none or multiple hardware settings")
-        print("only use one --GPU or --CPU")
-        sys.exit(1)
-    
+    ErrorHandling.InputDataCheck(startMs, endMs, startMssel, endMssel, 
+        rawFilesPath)
+    ErrorHandling.ModelExistsCheck(model)
+    ErrorHandling.SavingFilesCheck([logPrePost, logSummary, logPost])
+    ErrorHandling.SearchParametersCheck(setSearchParameter, search)
+    if(len(rawFilesPath) == 0):
+        ErrorHandling.TrajectoryExistsFolderCheck()
+    ErrorHandling.HardwareSelected(hardware)
     ########################################################################
     # read the required information from the commandline
     # if commands are overwritten using save mode they are not loaded
@@ -315,7 +288,14 @@ def main(argv):
                 windowLength = str([int(lineIndex)
                                for lineIndex in line.split()
                                if lineIndex.isdigit()][0])
-        if lineIndex > 25:
+        if (classification == Classification.NULL):
+            if line.find(Classification.fromStr(Classification.NS)) != -1:
+                classification = Classification.NS
+            elif line.find(Classification.fromStr(Classification.NH)) != -1:
+                classification = Classification.NH
+            elif line.find(Classification.fromStr(Classification.NHS)) != -1:
+                classification = Classification.NHS
+        if lineIndex > 50:
             print("ERROR: Problem with commandline log of model")
             sys.exit(1)    
     commandLineModel.close()        

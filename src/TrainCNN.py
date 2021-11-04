@@ -29,8 +29,9 @@ import re
 from subprocess import Popen, PIPE
 
 # import my own files
-from logic import datatypes
-from logic import errorHandling
+from logic.datatypes import Hardware
+from logic.datatypes import Classification
+from logic.errorHandling import ErrorHandling
 import callerBitmap
 import callerTrainCNN
 from logic import randomGenerator
@@ -152,8 +153,8 @@ def main(argv):
     rawFilesPath = ''
     force = False
     threads = '5'
-    hardware = datatypes.Hardware.NULL
-    classification = datatypes.Classification.NULL
+    hardware = Hardware.NULL
+    classification = Classification.NULL
     # extra training settings
     minAcc = 0
     maxLoss = sys.float_info.max
@@ -229,20 +230,20 @@ def main(argv):
         elif opt in ("--force"):
             force = True
         elif opt in ("--CPU"):
-            errorHandling.ErrorHandling.HardwareCheck(hardware)
-            hardware = datatypes.Hardware.CPU
+            ErrorHandling.HardwareCheck(hardware)
+            hardware = Hardware.CPU
         elif opt in ("--GPU"):
-            errorHandling.ErrorHandling.HardwareCheck(hardware)
-            hardware = datatypes.Hardware.GPU
+            ErrorHandling.HardwareCheck(hardware)
+            hardware = Hardware.GPU
         elif opt in ("--NS"):
-            errorHandling.ErrorHandling.ClassificationCheck(classification)
-            classification = datatypes.Classification.NS
+            ErrorHandling.ClassificationCheck(classification)
+            classification = Classification.NS
         elif opt in ("--NH"):
-            errorHandling.ErrorHandling.ClassificationCheck(classification)
-            classification = datatypes.Classification.NH
+            ErrorHandling.ClassificationCheck(classification)
+            classification = Classification.NH
         elif opt in ("--NHS"):
-            errorHandling.ErrorHandling.ClassificationCheck(classification)
-            classification = datatypes.Classification.NHS
+            ErrorHandling.ClassificationCheck(classification)
+            classification = Classification.NHS
     
     ########################################################################
     # check if some options are filled in
@@ -250,14 +251,14 @@ def main(argv):
     startTime = time.time()
     ########################################################################
     # check if there is enough data to perform the inference
-    errorHandling.ErrorHandling.InputDataCheck(startMs, endMs, startMssel, endMssel, rawFilesPath)
-    errorHandling.ErrorHandling.TryCountCheck(triesCount)
-    errorHandling.ErrorHandling.ThreadNumberCheck(threads)
-    errorHandling.ErrorHandling.ModelExistsCheck(model, force)    
+    ErrorHandling.InputDataCheck(startMs, endMs, startMssel, endMssel, rawFilesPath)
+    ErrorHandling.TryCountCheck(triesCount)
+    ErrorHandling.ThreadNumberCheck(threads)
+    ErrorHandling.ModelExistsCheck(model, force)    
     if(len(rawFilesPath) == 0):
-        errorHandling.ErrorHandling.TrajectoryExistsFolderCheck()
-    errorHandling.ErrorHandling.ClassificationSelected(classification)
-    errorHandling.ErrorHandling.HardwareSelected(hardware)    
+        ErrorHandling.TrajectoryExistsFolderCheck()
+    ErrorHandling.ClassificationSelected(classification)
+    ErrorHandling.HardwareSelected(hardware)    
     ########################################################################
     # run all the scripts and python code
     # setup the file structure
@@ -272,7 +273,7 @@ def main(argv):
                                 ' -d out '))
 
     # call the cleaning script
-    for className in datatypes.Classification.classStr(classification):
+    for className in Classification.classStr(classification):
         subprocess.call(shlex.split(
             './src/scripts/cleanCompleteTrain.sh' +
             ' -i ' + str(className) +
@@ -317,7 +318,7 @@ def main(argv):
                         if file.is_file():
                             tempFiles.append(str(file.path))
             filesToRun.append(tempFiles)
-    errorHandling.ErrorHandling.ClassesCheck(classesFound, datatypes.Classification.classStr(classification))
+    ErrorHandling.ClassesCheck(classesFound, Classification.classStr(classification))
     classIndex = 0
     for folders in filesToRun:
         startedIndex = 0
@@ -325,7 +326,7 @@ def main(argv):
             startedIndex += 1
             p = subprocess.Popen("python3 src/callerBitmap.py" + ' -i ' + files +
                             ' -o ' + str(folderName) +
-                            '/img/' + datatypes.Classification.classStr(classification)[classIndex] + '/img' + str(startedIndex) + "_" +
+                            '/img/' + Classification.classStr(classification)[classIndex] + '/img' + str(startedIndex) + "_" +
                             ' -w ' + str(windowEnb) +
                             ' -l ' + str(windowLength) +
                             ' -s ' + str(stepSize) +
@@ -390,8 +391,8 @@ def main(argv):
                              '-x' + str(windowLength),
                              '-a' + str(design),
                              '-t' + str(threads),
-                             datatypes.Hardware.fromStr(hardware),
-                             datatypes.Classification.fromStr(classification)])
+                             Hardware.fromStr(hardware),
+                             Classification.fromStr(classification)])
         # check the acc
         openfile = open(str(model) + "/TrainResultsAcc.txt", 'r')
         for lineIndex, line in enumerate(openfile):
@@ -465,8 +466,8 @@ def main(argv):
             print("-z " + str(threads))
             if force:
                 print("--force")
-            print(datatypes.Hardware.fromStr(hardware))
-            print(datatypes.Classification.fromStr(classification))
+            print(Hardware.fromStr(hardware))
+            print(Classification.fromStr(classification))
 
     totalTime = (timeInitialSetup + timeDataGeneration + timeImageGeneration
                  + timeTrain + timeCleanUp)

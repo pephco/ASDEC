@@ -54,7 +54,7 @@ class ErrorHandling(object):
             sys.exit(1) 
 
     @staticmethod
-    def ModelExistsCheck(model, force):
+    def ModelExistsCheckForce(model, force):
         if (os.path.exists(model) and not force):
             print("ERROR: Model already present and no overwrite flag is provided")
             print("If overwrite is desired add --force flag")

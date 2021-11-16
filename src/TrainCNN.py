@@ -254,7 +254,7 @@ def main(argv):
     ErrorHandling.InputDataCheck(startMs, endMs, startMssel, endMssel, rawFilesPath)
     ErrorHandling.TryCountCheck(triesCount)
     ErrorHandling.ThreadNumberCheck(threads)
-    ErrorHandling.ModelExistsCheck(model, force)    
+    ErrorHandling.ModelExistsCheckForce(model, force)    
     if(len(rawFilesPath) == 0):
         ErrorHandling.TrajectoryExistsFolderCheck()
     ErrorHandling.ClassificationSelected(classification)

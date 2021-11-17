@@ -195,7 +195,7 @@ def main(argv):
     # in the bitmap converter
     ############################################################################
     errorHandling.ErrorHandling.GreaterThenZeroCheck(
-        [stepSize, size, extractionSize, startPos, endPos]
+        [stepSize, size, extractionSize]
     )
         
     ############################################################################

@@ -469,7 +469,8 @@ def main(argv):
             ' -y ' + str(extractionPoint) +
             ' -z ' + str(memorySize) + 
             ' -Z ' + str(chromosomeLength) +
-            ' -X ' + str(Classification.fromStr(classification))))
+            ' -X ' + str(Hardware.fromStr(hardware)) +
+            ' -Y ' + str(Classification.fromStr(classification))))
 
         if(logSummary != "NULL"):
             ### time ###

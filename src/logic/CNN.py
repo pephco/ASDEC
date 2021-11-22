@@ -54,7 +54,7 @@ class CNN:
         self.modelName = modelName
         self.directory = directory
         self.__CheckDevice(hardware)
-        self.classifcation = classification
+        self.classification = classification
     # endregion
     
     ########################################################################
@@ -319,8 +319,9 @@ class Load(CNN):
         firstSNP = float(imageName[midPos1 + len(".w_start_"):midPos2])
         lastSNP = float(imageName[midPos2 + len(".w_end_"):endPos])
         middleSNP = (firstSNP + lastSNP) / 2
+        print(Classification.classStr(self.classification))
         # write output when using 
-        if (len(Classification.classStr(self.classification) == 2)):
+        if (len(Classification.classStr(self.classification)) == 2):
             scoreNeutral = score[0]
             scoreSelected = score[1]
             self.resultsData = np.append(self.resultsData,

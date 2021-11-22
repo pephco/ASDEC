@@ -345,6 +345,7 @@ def main(argv):
         if (len(folders) == 0):
             print("ERROR: No txt files found do in " + str(folders))
             sys.exit(1)
+        classIndex += 1
               
     # open a single file to get the number of individuals
     getIndividuals = ""

@@ -23,8 +23,10 @@
 from abc import ABCMeta, abstractmethod
 import math
 import pathlib
+from logic.datatypes import Classification
 import numpy as np
 import os
+import sys
 # endregion
 
 ############################################################################
@@ -39,11 +41,13 @@ class PostProcessing:
     ########################################################################
     # region
 
-    def __init__(self, logfilePath, outLogFilePath, outSummary, outPrePostLog):
+    def __init__(self, logfilePath, outLogFilePath, outSummary, 
+        outPrePostLog, classification):
         self.logfilePath = logfilePath
         self.outLogFilePath = outLogFilePath
         self.outSummary = outSummary
         self.outPrePostLog = outPrePostLog
+        self.classification = classification
     # endregion
 
     ########################################################################
@@ -52,13 +56,14 @@ class PostProcessing:
     # region
     def PostFolder(self):
         count = 1
-        self.summary = np.empty((0, 6), float)
+        self.summary = np.empty((0, 4 + len(Classification.classStr
+            (self.classification))), float)
         with os.scandir(self.logfilePath) as folder:
-            for textFile in folder:
-                if textFile.is_file():
-                    print("processing file number: " + str(count))
-                    self.PerformPost(textFile.name)
-                    count += 1
+                for textFile in folder:
+                    if textFile.is_file():
+                        print("processing file number: " + str(count))
+                        self.PerformPost(textFile.name)
+                        count += 1
         # save the self.summary numpy array to a seperate file
         if (self.outSummary != "NULL"):
             self.SaveSummary()
@@ -71,7 +76,7 @@ class PostProcessing:
     def SaveSummary(self):
         raise NotImplementedError("ERROR: Must override by childeren")
 
-    def CreateSummaryLine(self):
+    def CreateSummaryLineBinary(self):
         print("create summary line")
         idx = np.where(np.around(self.logfileDataPost[:, 4], 5) ==
                        np.amax(np.around(self.logfileDataPost[:, 4], 5)))
@@ -85,7 +90,32 @@ class PostProcessing:
                                  np.array([self.logfileDataPost[idx, :]]),
                                  axis=0)
 
-    def Textfile2Array(self, textFileName):
+    def CreateSummaryLineMultiClass(self):
+        print("create summary line")
+        idx1 = np.where(np.around(self.logfileDataPost[:, 4], 5) ==
+                       np.amax(np.around(self.logfileDataPost[:, 4], 5)))
+        idx2 = np.where(np.around(self.logfileDataPost[:, 5], 5) ==
+                       np.amax(np.around(self.logfileDataPost[:, 5], 5)))
+        if (len(idx1[0]) == 1):
+            idx1 = idx1[0][0]
+        else:
+            avgIdx1 = int((len(idx1[0])-1)/2)
+            idx1 = idx1[0][avgIdx1]
+        print(idx1)
+        self.summary = np.append(self.summary,
+                                 np.array([self.logfileDataPost[idx1, :]]),
+                                 axis=0)
+        if (len(idx2[0]) == 1):
+            idx2 = idx2[0][0]
+        else:
+            avgIdx2 = int((len(idx2[0])-1)/2)
+            idx2 = idx2[0][avgIdx2]
+        print(idx2)
+        self.summary = np.append(self.summary,
+                                 np.array([self.logfileDataPost[idx2, :]]),
+                                 axis=0)
+
+    def Textfile2ArrayBinary(self, textFileName):
         self.logfileData = np.empty((0, 5), float)
         try:
             with open(self.logfilePath + textFileName, 'r') as logfile:
@@ -108,15 +138,52 @@ class PostProcessing:
             print("ERROR: File could not be loaded")
             return
 
-    def MakeZero(self):
+    def Textfile2ArrayMultiClass(self, textFileName):
+        self.logfileData = np.empty((0, 6), float)
+        try:
+            with open(self.logfilePath + textFileName, 'r') as logfile:
+                for line in logfile.readlines():
+                    point = line.split(' ')
+                    firstPosition = float(point[0])
+                    lastPosition = float(point[1])
+                    middlePosition = float(point[2])
+                    probNeutral = float(point[3])
+                    probSelective1 = float(point[4])
+                    probSelective2 = float(point[5])
+                    self.logfileData = np.append(self.logfileData,
+                                                 np.array(
+                                                     [[firstPosition,
+                                                       lastPosition,
+                                                       middlePosition,
+                                                       probNeutral,
+                                                       probSelective1,
+                                                       probSelective2]]),
+                                                 axis=0)
+        except IOError:
+            print("ERROR: File could not be loaded")
+            return
+
+    def MakeZeroBinary(self):
         self.divisionCount = 0
         self.avgProbN = 0
         self.avgProbS = 0
 
-    def AddAvg(self, idx):
+    def MakeZeroMultiClass(self):
+        self.divisionCount = 0
+        self.avgProbN = 0
+        self.avgProbS1 = 0
+        self.avgProbS2 = 0
+
+    def AddAvgBinary(self, idx):
         self.divisionCount += 1
         self.avgProbN += self.logfileData[idx, 3]
         self.avgProbS += self.logfileData[idx, 4]
+
+    def AddAvgMultiClass(self, idx):
+        self.divisionCount += 1
+        self.avgProbN += self.logfileData[idx, 3]
+        self.avgProbS1 += self.logfileData[idx, 4]
+        self.avgProbS2 += self.logfileData[idx, 5]
     # endregion
 
 ############################################################################
@@ -130,9 +197,9 @@ class WindowData(PostProcessing):
     ########################################################################
     # region
     def __init__(self, logfilePath, outLogFilePath, outSummary,
-                 outPrePostLog, stepSize, windowSize):
+                 outPrePostLog, stepSize, windowSize, classification):
         PostProcessing.__init__(self, logfilePath, outLogFilePath,
-                                outSummary, outPrePostLog)
+                                outSummary, outPrePostLog, classification)
         self.stepSize = stepSize
         self.windowSize = windowSize
     # endregion
@@ -212,9 +279,9 @@ class WindowPos(PostProcessing):
     ########################################################################
     # region
     def __init__(self, logfilePath, outLogFilePath, outSummary, 
-                outPrePostLog, stepSize, windowSize):
+                outPrePostLog, stepSize, windowSize, classification):
         PostProcessing.__init__(self, logfilePath, outLogFilePath,
-                                outSummary, outPrePostLog)
+                                outSummary, outPrePostLog, classification)
         self.stepSize = stepSize
         self.windowSize = windowSize
     # endregion
@@ -311,9 +378,9 @@ class GridSize(PostProcessing):
     ########################################################################
     # region
     def __init__(self, logfilePath, outLogFilePath, outSummary, 
-                outPrePostLog, gridSize, maxDist, cutoff):
+                outPrePostLog, gridSize, maxDist, cutoff, classification):
         PostProcessing.__init__(self, logfilePath, outLogFilePath,
-                                outSummary, outPrePostLog)
+                                outSummary, outPrePostLog, classification)
         self.gridSize = gridSize
         self.maxDist = maxDist
         self.cutoff = cutoff

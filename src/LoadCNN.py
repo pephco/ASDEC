@@ -313,10 +313,11 @@ def main(argv):
     subprocess.call(shlex.split('./src/scripts/makeFolder.sh' +
                                 ' -d out '))
 
-    # call the cleaning script
-    subprocess.call(shlex.split('./src/scripts/cleanCompleteLoad.sh' +
-                                ' -t ' + str(threads) +
-                                ' -d ' + str(folderName)))
+    for type in Classification.classStr(classification):
+        subprocess.call(shlex.split('./src/scripts/cleanCompleteLoad.sh' +
+                                    ' -t ' + str(threads) +
+                                    ' -d ' + str(folderName) +
+                                    ' -f ' + str(type)))
 
     # call the seperate creation of the info file within the
     # designated location for saving the info of the run

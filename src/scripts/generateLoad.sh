@@ -88,9 +88,9 @@ do
     if [ "${saveSummary}" != "NULL" ]
     then
         rsync -a --delete $folderName/blank/ $folderName/sum$thread/
-        python3 src/callerPostProcessing.py -i $folderName/log$thread/ -o $savePost -s $folderName/sum$thread/ -m $postMode -a $parama -b $paramb -v "${saveSummary}/info/threadTime_$thread.txt" -x $logPrePost
+        python3 src/callerPostProcessing.py -i $folderName/log$thread/ -o $savePost -s $folderName/sum$thread/ -m $postMode -a $parama -b $paramb -v "${saveSummary}/info/threadTime_$thread.txt" -x $logPrePost "${inputLineTraining}"
         cat $folderName/sum$thread/*.txt >> $folderName/sum/$thread.txt 
     else
-        python3 src/callerPostProcessing.py -i $folderName/log$thread/ -o $savePost -s NULL -m $postMode -a $parama -b $paramb -x $logPrePost
+        python3 src/callerPostProcessing.py -i $folderName/log$thread/ -o $savePost -s NULL -m $postMode -a $parama -b $paramb -x $logPrePost "${inputLineTraining}"
     fi
 done

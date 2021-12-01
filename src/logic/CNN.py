@@ -319,7 +319,7 @@ class Load(CNN):
         firstSNP = float(imageName[midPos1 + len(".w_start_"):midPos2])
         lastSNP = float(imageName[midPos2 + len(".w_end_"):endPos])
         middleSNP = (firstSNP + lastSNP) / 2
-        print(Classification.classStr(self.classification))
+        # print(Classification.classStr(self.classification))
         # write output when using 
         if (len(Classification.classStr(self.classification)) == 2):
             scoreNeutral = score[0]

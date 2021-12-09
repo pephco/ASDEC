@@ -5,9 +5,9 @@ Authors: Matthijs Souilljee (matthijs.souilljee@gmail.com) and Nikolaos Alachiot
 
 First release: 31/07/2021
 
-Last update: 23/09/2021
+Last update: 09/12/2021
 
-Version: 1.1
+Version: 1.2
 
 # ABOUT
 -----
@@ -17,6 +17,11 @@ ASDEC (Accurate Sweep Detection Enabled by a CNN) is a stand-alone software impl
 The current ASDEC release can process SNP data in Hudson's ms, VCF (Variant Call Format) file formats or FASTA using [RAiSD](https://github.com/pephco/RAiSD/) for parsing to vcf first. The given basic run example is in Hudson's ms format. For the VCF format, refer to the respective Wikipedia entry (https://en.wikipedia.org/wiki/Variant_Call_Format).
 
 Concerning the handling strategy of missing data the same strategy as deployed by [RAiSD](https://github.com/pephco/RAiSD/) is used. 
+
+ASDEC supports three different types of classification problems:
+- neutral, hard selective sweep					[neutral, hard]
+- neutral, soft selective sweep					[neutral, soft]
+- neutral, hard selective sweep, soft selective sweep		[neutral, hard, soft]
 
 # Supported file formats
 -----
@@ -113,12 +118,14 @@ python3 src/TrainCNN.py -h
 ```
 Only the parameters that differ should be added otherwise the def value is taken.
 ```bash
-python3 src/TrainCNN.py -a 1 -b 10 -c 1 -d 10 -e 10 -p models/TESTMODEL -o 3 --CPU
+python3 src/TrainCNN.py -a 1 -b 10 -c 1 -d 10 -e 10 -p models/TESTMODEL -o 3 --CPU --NH
 ```
 Here we start with data-set 1 till and including 10 for both ms and mssel (given by the values of parameters: a, b, c, and d).
 Next, we use -e to tell ASDEC to create 10 populations per file -p gives us the location and name of the model, and lastly -o gives us the number of training epochs.
 All other parameters can be left to their default value including -q which now uses the SweepNet CNN design/architecture.
 Check out the 'models/TESTMODEL' directory for your model.
+
+When training a model the correct classification type should be defined (NH, NS, or NHS) this information is saved within the model for inference. The data generation only supports the classification type NH (neutral and hard selective sweep).
 
 **output:** 
 ```bash 
@@ -239,5 +246,6 @@ Where the -q parameters tell ASDEC to use your model design.
 Changelog
 ----------
 
-	v1.0 (31/07/2021): first release
+	v1.0 (31/07/2021): Initial release
 	V1.1 (23/09/2021): CPU and GPU update
+	V1.2 (09/12/2021): Added new classification handling

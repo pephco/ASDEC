@@ -242,7 +242,8 @@ class Load(CNN):
         CNN.__init__(self, modelName, directory, threads, hardware, classification)
         self.loadedModel = keras.models.load_model(self.modelName)
         self.outDirectory = outDirectory
-        self.resultsData = np.empty((0, 6), float)
+        self.resultsData = np.empty((0, 
+            4 + len(Classification.classStr(self.classification))), float)
     # endregion
 
     ########################################################################
@@ -250,13 +251,15 @@ class Load(CNN):
     ########################################################################
     # region
     def imageSingle(self, imageName):
-        self.resultsData = np.empty((0, 6), float)
+        self.resultsData = np.empty((0, 
+            4 + len(Classification.classStr(self.classification))), float)
         self.__performPrediction(self.directory + imageName)
 
     def imageFolder(self):
         totalAmountOfImages = str(len(os.listdir(self.directory)) - 1)
         print("total amount of Images " + totalAmountOfImages)
-        self.resultsData = np.empty((0, 6), float)
+        self.resultsData = np.empty((0, 
+            4 + len(Classification.classStr(self.classification))), float)
         with os.scandir(self.directory) as i:
             for image in i:
                 if image.is_file():
@@ -264,6 +267,20 @@ class Load(CNN):
         return totalAmountOfImages
 
     def generateReport(self):
+        if (len(Classification.classStr(self.classification)) == 2):
+            self.__binaryReport()
+        elif (len(Classification.classStr(self.classification)) == 3):
+            self.__multiClassReport()
+        else:
+            print("ERROR: incorrect number of classification classes")
+            sys.exit(1)
+    # endregion
+
+    ########################################################################
+    # private methods
+    ########################################################################
+    # region
+    def __binaryReport(self):
         maxOfImages = int(max(self.resultsData[:, 0])) + 1
         minOfImages = int(min(self.resultsData[:, 0]))
         # sort on image value number
@@ -289,12 +306,35 @@ class Load(CNN):
             # save the log file
             np.savetxt(self.outDirectory + str(x) + ".txt",
                        temp[:][:], fmt="%s")
-    # endregion
 
-    ########################################################################
-    # private methods
-    ########################################################################
-    # region
+    def __multiClassReport(self):
+        maxOfImages = int(max(self.resultsData[:, 0])) + 1
+        minOfImages = int(min(self.resultsData[:, 0]))
+        # sort on image value number
+        self.resultsData = self.resultsData[self.resultsData[:, 0].
+                                            argsort()]
+        # i is the global counter which counts through all positions
+        i = 0
+        for x in range(minOfImages, maxOfImages):
+            temp = np.empty((0, 6), float)
+            while int(self.resultsData[i][0]) == x:
+                temp = np.append(temp,
+                                 np.array([[self.resultsData[i][1],
+                                            self.resultsData[i][2],
+                                            self.resultsData[i][3],
+                                            self.resultsData[i][4],
+                                            self.resultsData[i][5],
+                                            self.resultsData[i][6],
+                                            ]]), axis=0)
+                i += 1
+                if i >= len(self.resultsData):
+                    break
+            # sort on middle snp
+            temp = temp[temp[:, 2].argsort()]
+            # save the log file
+            np.savetxt(self.outDirectory + str(x) + ".txt",
+                       temp[:][:], fmt="%s")
+
     def __performPrediction(self, imageName):
         img = tf.keras.preprocessing.image.load_img(
             self.directory + imageName,

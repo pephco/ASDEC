@@ -289,11 +289,11 @@ def main(argv):
                                for lineIndex in line.split()
                                if lineIndex.isdigit()][0])
         if (classification == Classification.NULL):
-            if line.find(Classification.fromStr(Classification.NS)) != -1:
+            if (Classification.fromStr(Classification.NS) == str(line).strip()):
                 classification = Classification.NS
-            elif line.find(Classification.fromStr(Classification.NH)) != -1:
+            elif (Classification.fromStr(Classification.NH) == str(line).strip()):
                 classification = Classification.NH
-            elif line.find(Classification.fromStr(Classification.NHS)) != -1:
+            elif (Classification.fromStr(Classification.NHS) == str(line).strip()):
                 classification = Classification.NHS
         if lineIndex > 50:
             print("ERROR: Problem with commandline log of model")

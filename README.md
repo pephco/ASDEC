@@ -46,6 +46,10 @@ cd ASDEC/
 
 ### Installation dependencies
 Use the package manager to install [tensorflow](https://www.tensorflow.org/), [keras](https://keras.io/), and following the install instructions of TensorFlow 2 and Keras. Besides python3 also python3-dev and python3-venv should be installed on the machine. Different bash files are used for automation tested version: GNU bash, version 5.0.17(1)-release (x86_64-pc-linux-gnu).
+Following Linux packages are required:
+```bash
+sudo apt install unzip	#(version 6.00)
+```
 Install the following pip packages for python3 may require pip3 instead of pip:
 ```bash
 pip3 install tensorflow==2.4.1

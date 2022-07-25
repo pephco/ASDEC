@@ -48,10 +48,14 @@ cd ASDEC/
 Use the package manager to install [tensorflow](https://www.tensorflow.org/), [keras](https://keras.io/), and following the install instructions of TensorFlow 2 and Keras. Besides python3 also python3-dev and python3-venv should be installed on the machine. Different bash files are used for automation tested version: GNU bash, version 5.0.17(1)-release (x86_64-pc-linux-gnu).
 Following Linux packages are required:
 ```bash
+sudo apt update
+sudo apt install python3-pip #(version 20.0.2)
 sudo apt install unzip	#(version 6.00)
 ```
 Install the following pip packages for python3 may require pip3 instead of pip:
 ```bash
+pip3 install testresources==2.0.1
+pip3 install protobuf==3.9.2
 pip3 install tensorflow==2.4.1
 pip3 install keras==2.4.3
 pip3 install numpy==1.19.5
@@ -174,11 +178,11 @@ The other files in the info folder are self-explanatory.
 Go to the root of the ASDEC repository.
 Lastly to calculate the success rate, distance error:
 ```bash
-python3 tools/accuracy.py -i archive/logTraj_TEST1_summary.txt -c 500000 -r 10000 -o archive/results/acc.txt -f false -p 0
+python3 src/accuracy.py -i archive/logTraj_TEST1_summary.txt -c 500000 -r 10000 -o archive/results/acc.txt -f false -p 0
 ```
 For more information run:
 ```bash
-python3 tools/accuracy.py -h
+python3 src/accuracy.py -h
 ```
 **output:** 
 ```bash
@@ -186,11 +190,11 @@ the accuracy files: Path to file to score, raw distance, amount of entries corre
 ```
 And to calculate the TPR with a given 5% FPR value:
 ```bash
-python3 tools/TPRFPR.py -n archive/logTraj_BASE1_summary.txt -s archive/logTraj_TEST1_summary.txt -f 0.05 -o archive/results/tprfpr.txt -r false -d false
+python3 src/TPRFPR.py -n archive/logTraj_BASE1_summary.txt -s archive/logTraj_TEST1_summary.txt -f 0.05 -o archive/results/tprfpr.txt -r false -d false
 ```
 For more information run:
 ```bash
-python3 tools/TPRFPR.py -h
+python3 src/TPRFPR.py -h
 ```
 **output:**  
 ```bash

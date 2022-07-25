@@ -141,7 +141,7 @@ def Folder(summarySelective, summaryNeutral, FPR):
                                         compPathNeu)
                                     selectiveData = LogFile2Array(
                                         compPathSel)
-                                    fprProbSelec, TPR = CalculateTPR(
+                                    fprProbSelec, TPR = CalculateTPRBinary(
                                         neutralData, selectiveData, FPR)
                                     tempData = np.append(tempData,
                                                          np.array([[compPathSel,
@@ -163,7 +163,7 @@ def Single(summarySelective, summaryNeutral, FPR):
     ########################################################################
     # now calculate the TPR
     ########################################################################
-    fprProbSelec, TPR = CalculateTPR(neutralData, selectiveData, FPR)
+    fprProbSelec, TPR = CalculateTPRBinary(neutralData, selectiveData, FPR)
     ########################################################################
     # append to the results
     ########################################################################
@@ -248,6 +248,10 @@ def main(argv):
                                       FPR, outputPath])
     ErrorHandling.ClassificationSelected(classification)
     print("Calculating TPR based on a FPR of " + str(FPR))
+
+    if (classification == Classification.NHS):
+        print("Not supported")
+        return
 
     #########################################################################
     # get the summary data from the file

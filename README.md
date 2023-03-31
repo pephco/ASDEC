@@ -25,7 +25,7 @@ ASDEC implements the following coalescent simulation software: ms, mssel, mbs (c
 
 <img src="Img/CoalescentTable.PNG" width="560">
 
-Download: 
+Download: https://figshare.com/articles/dataset/Datasets-for-CNN-evaluation/22434445
 
 # Download and Setup
 --------------------

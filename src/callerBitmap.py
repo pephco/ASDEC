@@ -15,6 +15,8 @@
 
 # region import packages
 import time
+
+from logic.errorHandling import ErrorHandling
 ### time ###
 startTime = time.time()
 ############
@@ -25,6 +27,7 @@ import shlex
 import subprocess
 
 # import my own files
+from logic import errorHandling
 from logic import bitmapConverter
 from logic import str2bool
 from logic import logo
@@ -162,35 +165,27 @@ def main(argv):
     ############################################################################
     if (str2bool.str2bool(windowTrigger) == True
         and str2bool.str2bool(extractionTrigger) == True):
-        if (len(inputfile) == 0 or len(outputfile) == 0 or len(stepSize) == 0
-                or len(size) == 0 or len(extractionSize) == 0 
-                or len(extractionPoint) == 0):
-            helpPrinter()
-            print("ERROR: not all fields are filled in!")
-            sys.exit()
+        errorHandling.ErrorHandling.FieldFilledInCheck(
+            [inputfile, outputfile, stepSize, size, extractionSize, extractionPoint]
+        )
     elif (str2bool.str2bool(windowTrigger) == True
         and str2bool.str2bool(extractionTrigger) == False):
-        if (len(inputfile) == 0 or len(outputfile) == 0 or len(stepSize) == 0 or
-                len(size) == 0):
-            helpPrinter()
-            print("ERROR: not all fields are filled in!")
-            sys.exit()
+        errorHandling.ErrorHandling.FieldFilledInCheck(
+            [inputfile, outputfile, stepSize, size]
+        )
         extractionSize="1"
         extractionPoint = "1"
     elif (str2bool.str2bool(windowTrigger) == False
         and str2bool.str2bool(extractionTrigger) == True):
-        if (len(inputfile) == 0 or len(outputfile) == 0 or 
-            len(extractionSize) == 0 or len(extractionPoint) == 0):
-            helpPrinter()
-            print("ERROR: not all fields are filled in!")
-            sys.exit()
+        errorHandling.ErrorHandling.FieldFilledInCheck(
+            [inputfile, outputfile, extractionSize, extractionPoint]
+        )
         stepSize="1"
         size="1"
     else:
-        if len(inputfile) == 0 or len(outputfile) == 0:
-            helpPrinter()
-            print("ERROR: not all fields are filled in!")
-            sys.exit()
+        errorHandling.ErrorHandling.FieldFilledInCheck(
+            [inputfile, outputfile]
+        )
         stepSize="1"
         size="1"
         extractionSize="1"
@@ -199,11 +194,9 @@ def main(argv):
     # check if the values are larger then zero otherwise infinite loop possible
     # in the bitmap converter
     ############################################################################
-    if (int(float(stepSize)) <= 0 or int(float(size)) <= 0 or
-            int(float(extractionSize)) <= 0 or int(float(startPos)) < 0 or
-            int(float(endPos))) < 0:
-        print("ERROR: some values are zero or smaller then zero")
-        sys.exit()
+    errorHandling.ErrorHandling.GreaterThenZeroCheck(
+        [stepSize, size, extractionSize]
+    )
         
     ############################################################################
     # If the file is in the vcf format call the RAiSD parser

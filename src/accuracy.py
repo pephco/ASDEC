@@ -3,8 +3,8 @@
 # File:			    accuracy.py
 # Organization:		University of twente
 # Group:		    CAES
-# Date:			    26-03--2021
-# Version:		  	0.2.0
+# Date:			    18-12-2021
+# Version:		  	0.3.0
 # Author:		    Matthijs Souilljee, s2211246
 # Education:	  	EMSYS msc.
 ############################################################################
@@ -21,6 +21,10 @@ import numpy as np
 import os
 
 from logic import str2bool
+from logic.errorHandling import ErrorHandling
+from logic.datatypes import Classification
+from logic.logo import logo
+
 # endregion
 
 ############################################################################
@@ -30,6 +34,7 @@ from logic import str2bool
 
 
 def HelpPrinterAccuracy():
+    logo()
     print("simple program that generates an accuracy report\n")
     print("accuracy.py -i <in> -c <center> -r <range> -o <out> -p <prob> -f <fold>\n")
     print("\t -h: help option")
@@ -39,7 +44,7 @@ def HelpPrinterAccuracy():
     print("\t -o: place to save the results (path + filename + exstension (e.g. sum/result.txt))")
     print("\t -f: if you want to generate the results of a whole folder (true) single file (false)")
     print("\t -p: minimal probability required to count as selective (when not desired put on 0)")
-    
+
 
 
 ############################################################################

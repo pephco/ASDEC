@@ -3,8 +3,8 @@
 # File:			callerPostProcessing.py
 # Organization:	University of twente
 # Group:		CAES
-# Date:			31-07-2021
-# Version:		1.0.0
+# Date:			28-11-2021
+# Version:		2.0.0
 # Author:		Matthijs Souilljee, s2211246
 # Education:	EMSYS msc.
 ############################################################################
@@ -25,6 +25,8 @@ from contextlib import redirect_stdout
 # import my own files
 from logic import PostProcessing
 from logic import logo
+from logic.datatypes import Classification
+from logic.errorHandling import ErrorHandling
 ### time ###
 importTime = time.time() - startTime
 startTime = time.time()
@@ -62,6 +64,9 @@ def helpPrinterPost():
     print("\tMode 4: Grid no max size check (always enforces grid size)")
     print("\t\t -a: gridsize in interger value")
     print("\t\t -b: max distance range")
+    print("\t--NS: binary classification of neutral and soft sweep")
+    print("\t--NHS: multi-class classification of neutral, hard sweep and soft sweep")
+    print("\t--NH: binary classification of neutral and hard sweep")
     print("\t -v, special option voor complete prog timing")
     
 
@@ -87,6 +92,7 @@ def main(argv):
     param1 = ''
     param2 = ''
     timeFolder = 'NULL'
+    classification = Classification.NULL
 
     ########################################################################
     # get all the arguments from the commandline
@@ -97,7 +103,8 @@ def main(argv):
                                    "outputdirectory=",
                                    "outputdirectorysummary=",
                                    "outputdirectorypost=",
-                                   "parama=", "paramb"])
+                                   "parama=", "paramb=",
+                                   "NS", "NH", "NHS"])
     except getoptError:
         helpPrinterPost()
         sys.exit(2)
@@ -117,6 +124,15 @@ def main(argv):
             param2 = arg
         elif opt in ("-s", "--outputdirectorysummary"):
             outSummary = arg
+        elif opt in ("--NS"):
+            ErrorHandling.ClassificationCheck(classification)
+            classification = Classification.NS
+        elif opt in ("--NH"):
+            ErrorHandling.ClassificationCheck(classification)
+            classification = Classification.NH
+        elif opt in ("--NHS"):
+            ErrorHandling.ClassificationCheck(classification)
+            classification = Classification.NHS
         elif opt == "-v":
             timeFolder = arg
         elif opt in ("-x","--outputdirectorypost"):
@@ -125,15 +141,9 @@ def main(argv):
     ########################################################################
     # check if all parameters are filled in
     ########################################################################
-    if (len(mod) == 0 or len(indirec) == 0 or
-            len(param1) == 0 or len(param2) == 0):
-        helpPrinterPost()
-        print("ERROR: not all fields are filled in!")
-        sys.exit()
-
-    if (float(param1) <= 0 or float(param2) <= 0):
-        print("ERROR: some values are zero or smaller then zero")
-        sys.exit()
+    ErrorHandling.FieldFilledInCheck([mod, indirec, param1, param2])
+    ErrorHandling.GreaterThenZeroCheck([param1, param2])
+    ErrorHandling.ClassificationSelected(classification)    
 
     ########################################################################
     # Determine mode and call the child class corresponding
@@ -142,24 +152,26 @@ def main(argv):
         call = PostProcessing.WindowData(indirec, outdirec,
                                          outSummary, outprepost,
                                          int(float(param1)),
-                                         int(float(param2)))
+                                         int(float(param2)),
+                                         classification)
     elif (int(float(mod)) == 2):
         call = PostProcessing.WindowPos(indirec, outdirec,
                                         outSummary, outprepost,
                                         float(param1),
-                                        float(param2))
+                                        float(param2),
+                                        classification)
     elif (int(float(mod)) == 3):
         call = PostProcessing.GridSize(indirec, outdirec,
                                        outSummary, outprepost,
                                        int(float(param1)),
                                        float(param2),
-                                       True)
+                                       True, classification)
     elif (int(float(mod)) == 4):
         call = PostProcessing.GridSize(indirec, outdirec,
                                        outSummary,
                                        int(float(param1)),
                                        int(float(param2)),
-                                       False)
+                                       False, classification)
     else:
         print("ERROR: unknown mode")
         sys.exit(2)

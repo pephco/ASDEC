@@ -23,6 +23,9 @@ from contextlib import redirect_stdout
 import getopt
 import sys
 from logic import logo
+from logic.datatypes import Hardware
+from logic.datatypes import Classification
+from logic.errorHandling import ErrorHandling
 # import my own files
 ### time ###
 importTime = time.time() - startTime
@@ -47,6 +50,9 @@ def helpPrinterCNN():
     print("\t -t, --threads: Amount of threads used")
     print("\t--GPU: use GPU for inference")
     print("\t--CPU: use CPU for inference")
+    print("\t--NS: binary classification of neutral and soft sweep")
+    print("\t--NHS: multi-class classification of neutral, hard sweep and soft sweep")
+    print("\t--NH: binary classification of neutral and hard sweep")
     print("\t -v, special option voor complete prog timing")
 
 ############################################################################
@@ -65,8 +71,8 @@ def main(argv):
     outdirec = ''
     timeFolder = 'NULL'
     threads = '' 
-    CPU = False
-    GPU = False
+    hardware = Hardware.NULL
+    classification = Classification.NULL
 
     ########################################################################
     # get all the arguments from the commandline
@@ -75,7 +81,7 @@ def main(argv):
         opts, ars = getopt.getopt(argv, "hm:d:o:v:t:",
                                   ["model=", "directory=",
                                    "outDirectory=", "threads=",
-                                   "GPU", "CPU"])
+                                   "GPU", "CPU", "NS", "NH", "NHS"])
 
     except getoptError:
         helpPrinterCNN()
@@ -93,30 +99,35 @@ def main(argv):
         elif opt in ("-t", "--threads"):
             threads = arg
         elif opt in ("--CPU"):
-            CPU = True
+            ErrorHandling.HardwareCheck(hardware)
+            hardware = Hardware.CPU
         elif opt in ("--GPU"):
-            GPU = True
+            ErrorHandling.HardwareCheck(hardware)
+            hardware = Hardware.GPU
+        elif opt in ("--NS"):
+            ErrorHandling.ClassificationCheck(classification)
+            classification = Classification.NS
+        elif opt in ("--NH"):
+            ErrorHandling.ClassificationCheck(classification)
+            classification = Classification.NH
+        elif opt in ("--NHS"):
+            ErrorHandling.ClassificationCheck(classification)
+            classification = Classification.NHS
         elif opt == "-v":
             timeFolder = arg
 
     ########################################################################
     # check if all parameters are filled in
     ########################################################################
-    if (len(mod) == 0 or len(direc) == 0 or len(outdirec) == 0):
-        helpPrinterCNN()
-        print("ERROR: not all fields are filled in!")
-        sys.exit(1)
-        
-    if (not((CPU and GPU == False) or 
-        (CPU == False and GPU))):
-        print("ERROR: Selected none or multiple hardware settings")
-        print("only use one --GPU or --CPU")
-        sys.exit(1)
+    ErrorHandling.FieldFilledInCheck([mod, direc, outdirec])
+    ErrorHandling.HardwareSelected(hardware) 
+    ErrorHandling.ClassificationSelected(classification)    
 
     ########################################################################
     # call the code which really does the work
     ########################################################################
-    loadModel = CNN.Load(mod, direc, outdirec, int(threads), CPU, GPU)
+    loadModel = CNN.Load(mod, direc, outdirec, int(threads), hardware, 
+        classification)
     numberOfImages = loadModel.imageFolder()
     loadModel.generateReport()
 

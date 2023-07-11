@@ -4,7 +4,7 @@
 # Organization:	University of twente
 # Group:		CAES
 # Date:			31-07-2021
-# Version:		1.0.0
+# Version:		2.0.0
 # Author:		Matthijs Souilljee, s2211246
 # Education:	EMSYS msc.
 ############################################################################
@@ -32,6 +32,9 @@ import callerPostProcessing
 from logic import str2bool
 from logic import logo
 from logic import vcfConversion
+from logic.errorHandling import ErrorHandling
+from logic.datatypes import Hardware
+from logic.datatypes import Classification
 # endregion
 
 
@@ -155,8 +158,8 @@ def main(argv):
     rawFilesPath = ''
     search = False
     setSearchParameter = False
-    CPU = False
-    GPU = False
+    hardware = Hardware.NULL
+    classification = Classification.NULL
     # vcf parsing settings
     memorySize = '10'
     chromosomeLength = '100000'
@@ -244,9 +247,11 @@ def main(argv):
         elif opt in ("--search"):
             search = True
         elif opt in ("--CPU"):
-            CPU = True
+            ErrorHandling.HardwareCheck(hardware)
+            hardware = Hardware.CPU
         elif opt in ("--GPU"):
-            GPU = True
+            ErrorHandling.HardwareCheck(hardware)
+            hardware = Hardware.GPU
         
     ########################################################################
     # check if options are filled in correctly
@@ -256,46 +261,14 @@ def main(argv):
         startTime = time.time()
     ########################################################################
     # check if there is enough data to perform the inference
-    if ((int(startMs) == 0 and int(endMs) == 0 and int(startMssel) == 0
-        and int(endMssel) == 0 and len(rawFilesPath) == 0) or 
-        (int(startMs) > int(endMs) or int(startMssel) > int(endMssel))):
-        HelpPrinterLoad()
-        print("ERROR: Not enough data to perform inference")
-        sys.exit(1)
-    
-    # model not specified
-    if (str(model) == "NULL"):
-        print("ERROR: Model not specified")
-        sys.exit(1)
-        
-    # nothing is being saved
-    if (str(logPrePost) == "NULL" and str(logSummary) == "NULL" 
-        and str(logPost) == "NULL"):
-        print("ERROR: No saving location given")
-        sys.exit(1)
-    
-    # check if search mode items are used without search mode enabled
-    if (setSearchParameter and not search):
-        print("ERROR: When you want to use search mode add --search")
-        sys.exit(1)
-    
-    # check if the trajectory folder exists before running the code
-    if (int(startMssel) > 0):
-        if (not os.path.exists("trajectory_files/")):
-            print("ERROR: no folder called trajectory files, please")
-            print("run: ./tools/setupTrajectoryFiles.sh")
-            sys.exit(1)
-    
-    # Check hardware selection
-    if (CPU and GPU == False):
-        inputLineTraining = "--CPU"
-    elif (CPU == False and GPU):
-        inputLineTraining = "--GPU"
-    else:
-        print("ERROR: Selected none or multiple hardware settings")
-        print("only use one --GPU or --CPU")
-        sys.exit(1)
-    
+    ErrorHandling.InputDataCheck(startMs, endMs, startMssel, endMssel, 
+        rawFilesPath)
+    ErrorHandling.ModelExistsCheck(model)
+    ErrorHandling.SavingFilesCheck([logPrePost, logSummary, logPost])
+    ErrorHandling.SearchParametersCheck(setSearchParameter, search)
+    if(len(rawFilesPath) == 0):
+        ErrorHandling.TrajectoryExistsFolderCheck()
+    ErrorHandling.HardwareSelected(hardware)
     ########################################################################
     # read the required information from the commandline
     # if commands are overwritten using save mode they are not loaded
@@ -315,7 +288,14 @@ def main(argv):
                 windowLength = str([int(lineIndex)
                                for lineIndex in line.split()
                                if lineIndex.isdigit()][0])
-        if lineIndex > 25:
+        if (classification == Classification.NULL):
+            if (Classification.fromStr(Classification.NS) == str(line).strip()):
+                classification = Classification.NS
+            elif (Classification.fromStr(Classification.NH) == str(line).strip()):
+                classification = Classification.NH
+            elif (Classification.fromStr(Classification.NHS) == str(line).strip()):
+                classification = Classification.NHS
+        if lineIndex > 50:
             print("ERROR: Problem with commandline log of model")
             sys.exit(1)    
     commandLineModel.close()        
@@ -333,10 +313,11 @@ def main(argv):
     subprocess.call(shlex.split('./src/scripts/makeFolder.sh' +
                                 ' -d out '))
 
-    # call the cleaning script
-    subprocess.call(shlex.split('./src/scripts/cleanCompleteLoad.sh' +
-                                ' -t ' + str(threads) +
-                                ' -d ' + str(folderName)))
+    for type in Classification.classStr(classification):
+        subprocess.call(shlex.split('./src/scripts/cleanCompleteLoad.sh' +
+                                    ' -t ' + str(threads) +
+                                    ' -d ' + str(folderName) +
+                                    ' -f ' + str(type)))
 
     # call the seperate creation of the info file within the
     # designated location for saving the info of the run
@@ -489,7 +470,8 @@ def main(argv):
             ' -y ' + str(extractionPoint) +
             ' -z ' + str(memorySize) + 
             ' -Z ' + str(chromosomeLength) +
-            ' -X ' + str(inputLineTraining)))
+            ' -X ' + str(Hardware.fromStr(hardware)) +
+            ' -Y ' + str(Classification.fromStr(classification))))
 
         if(logSummary != "NULL"):
             ### time ###
@@ -515,7 +497,42 @@ def main(argv):
         subprocess.call(shlex.split(
             './src/scripts/deleteFolder.sh' +
             ' -d ' + str(folderName)))
-    
+
+    ########################################################################
+    # save terminal command used for creation
+    with open((logSummary + 'info/CommandLine.txt'), 'w') as f:
+        with redirect_stdout(f):
+            print("-a " + str(startMs))
+            print("-b " + str(endMs))
+            print("-c " + str(startMssel))
+            print("-d " + str(endMssel))
+            print("-e " + str(numberOfPopulations))
+            print("-f " + str(individuals))
+            print("-g " + str(windowEnb))
+            print("-i " + str(windowLength))
+            print("-j " + str(stepSize))
+            print("-k " + str(centerEnb))
+            print("-l " + str(centerRange))
+            print("-m " + str(multiplication))
+            print("-n " + str(model))
+            print("-o " + str(logPost))
+            print("-p " + str(logSummary))
+            print("-q " + str(mode))
+            print("-r " + str(parama))
+            print("-s " + str(paramb))
+            print("-t " + str(threads))
+            print("-u " + str(deleteWhenDone))
+            print("-v " + str(stepsPerThread))
+            print("-w " + str(rawFilesPath))
+            print("-x " + str(logPrePost))
+            print("-y " + str(extractionPoint))
+            print("-z " + str(memorySize))
+            print("-Z " + str(chromosomeLength))
+            if search:
+                print("--search")
+            print(Hardware.fromStr(hardware))
+            print(Classification.fromStr(classification))
+
     ########################################################################
     # Save the commandline arguments used for generation
     if(logSummary != "NULL"):
@@ -527,48 +544,12 @@ def main(argv):
         with open((logSummary + 'info/TimeOverview.txt'), 'a') as f:
             with redirect_stdout(f):
                 print("Total clean up time-----------:\t%.5f" %
-                      timeCleanUp)
+                    timeCleanUp)
                 print("Write time to file------------:\t%.5f" %
-                      (time.time() - startTime))
+                    (time.time() - startTime))
                 print("Total time--------------------:\t%.5f" %
-                      (time.time() - completeTime))
-        ############
-    ########################################################################
-        # save terminal command used for creation
-        with open((logSummary + 'info/CommandLine.txt'), 'w') as f:
-            with redirect_stdout(f):
-                print("-a " + str(startMs))
-                print("-b " + str(endMs))
-                print("-c " + str(startMssel))
-                print("-d " + str(endMssel))
-                print("-e " + str(numberOfPopulations))
-                print("-f " + str(individuals))
-                print("-g " + str(windowEnb))
-                print("-i " + str(windowLength))
-                print("-j " + str(stepSize))
-                print("-k " + str(centerEnb))
-                print("-l " + str(centerRange))
-                print("-m " + str(multiplication))
-                print("-n " + str(model))
-                print("-o " + str(logPost))
-                print("-p " + str(logSummary))
-                print("-q " + str(mode))
-                print("-r " + str(parama))
-                print("-s " + str(paramb))
-                print("-t " + str(threads))
-                print("-u " + str(deleteWhenDone))
-                print("-v " + str(stepsPerThread))
-                print("-w " + str(rawFilesPath))
-                print("-x " + str(logPrePost))
-                print("-y " + str(extractionPoint))
-                print("-z " + str(memorySize))
-                print("-Z " + str(chromosomeLength))
-                if search:
-                    print("--search")
-                if CPU:
-                    print("--CPU")
-                if GPU:
-                    print("--GPU")
+                    (time.time() - completeTime))
+
     print("completed running all scripts")
 
 if __name__ == "__main__":

@@ -14,12 +14,17 @@
 
 
 # region import packages
+from PIL.Image import HAMMING
 from tensorflow.keras.models import Sequential
 import numpy as np
 import os
 import tensorflow as tf
 import sys
 import math
+
+from logic.datatypes import Hardware
+from logic.datatypes import Classification
+from logic.errorHandling import ErrorHandling
 
 from tensorflow import keras
 from tensorflow.keras import (layers, models, activations,
@@ -38,37 +43,32 @@ from contextlib import redirect_stdout
 
 
 class CNN:
-    ########################################################################
-    # class attributes
-    ########################################################################
-    # region
-    CONST_classNames = ["neutral", "selection"]
-    # endregion
 
     ########################################################################
     # class constructor
     ########################################################################
     # region
-    def __init__(self, modelName, directory, threads, CPU, GPU):
+    def __init__(self, modelName, directory, threads, hardware, classification):
         tf.config.threading.set_intra_op_parallelism_threads(math.floor(int(threads)/2))
         tf.config.threading.set_inter_op_parallelism_threads(math.ceil(int(threads)/2))
         self.modelName = modelName
         self.directory = directory
-        self.__CheckDevice(CPU, GPU)
+        self.__CheckDevice(hardware)
+        self.classification = classification
     # endregion
     
     ########################################################################
     # private methods
     ########################################################################
     # region
-    def __CheckDevice(self, CPU, GPU):
+    def __CheckDevice(self, hardware):
         print("Checking installed devices")
         CPUDevices = tf.config.list_logical_devices('CPU')
         GPUDevices = tf.config.list_logical_devices('GPU')
         try:
-            if CPU and len(CPUDevices) > 0:
+            if hardware == Hardware.CPU and len(CPUDevices) > 0:
                 self.useDevice = '/CPU:0'
-            elif GPU and len(GPUDevices) > 0:
+            elif hardware == Hardware.GPU and len(GPUDevices) > 0:
                 print("RUNNING ON GPU")
                 self.useDevice = '/GPU:0'
             else:
@@ -97,8 +97,8 @@ class Training(CNN):
     # region
     def __init__(self, modelName, imgHeight, imgWidth, directory, 
                 batch_size, epochs, modelDesignName, threads, 
-                CPU, GPU):
-        CNN.__init__(self, modelName, directory, threads, CPU, GPU)
+                hardware, classification):
+        CNN.__init__(self, modelName, directory, threads, hardware, classification)
         self.batch_size = batch_size
         self.epochs = epochs
         self.modelName = modelName
@@ -139,7 +139,7 @@ class Training(CNN):
         # This step includes the compiling and fitting of the model design
         with tf.device(self.useDevice):
             self.model = self.modelDesign.model(
-                len(CNN.CONST_classNames), sizeImage)
+                len(Classification.classStr(self.classification)), sizeImage)
         
             self.history = self.model.fit(
                 self.train_ds,
@@ -185,12 +185,10 @@ class Training(CNN):
 
     def __classCheck(self):
         print("classes expected: " +
-              str(CNN.CONST_classNames[0]) + " "
-              + str(CNN.CONST_classNames[1]))
-        print("encountered classes " +
-              str(self.train_ds.class_names[0]) + " " +
-              str(self.train_ds.class_names[1]))
-        if CNN.CONST_classNames != self.train_ds.class_names:
+              str(Classification.classStr(self.classification)))
+        print("encountered classes " + 
+              str(self.train_ds.class_names))
+        if set(Classification.classStr(self.classification)) != set(self.train_ds.class_names):
             raise Exception("classes are not equal")
 
     def __summary(self):
@@ -213,7 +211,7 @@ class Training(CNN):
             with redirect_stdout(f):
                 print("amount of files used")
                 print("validation split is set to 0.2\n")
-                for i in (CNN.CONST_classNames):
+                for i in (Classification.classStr(self.classification)):
                     DIR = self.directory + str(i)
                     amount = str(len([name for name in os.listdir(DIR) if
                                       os.path.isfile(os.path.join(DIR, name))
@@ -240,11 +238,12 @@ class Load(CNN):
     ########################################################################
     # region
     def __init__(self, modelName, directory, outDirectory, threads, 
-                CPU, GPU):
-        CNN.__init__(self, modelName, directory, threads, CPU, GPU)
+                hardware, classification):
+        CNN.__init__(self, modelName, directory, threads, hardware, classification)
         self.loadedModel = keras.models.load_model(self.modelName)
         self.outDirectory = outDirectory
-        self.resultsData = np.empty((0, 6), float)
+        self.resultsData = np.empty((0, 
+            4 + len(Classification.classStr(self.classification))), float)
     # endregion
 
     ########################################################################
@@ -252,13 +251,15 @@ class Load(CNN):
     ########################################################################
     # region
     def imageSingle(self, imageName):
-        self.resultsData = np.empty((0, 6), float)
+        self.resultsData = np.empty((0, 
+            4 + len(Classification.classStr(self.classification))), float)
         self.__performPrediction(self.directory + imageName)
 
     def imageFolder(self):
         totalAmountOfImages = str(len(os.listdir(self.directory)) - 1)
         print("total amount of Images " + totalAmountOfImages)
-        self.resultsData = np.empty((0, 6), float)
+        self.resultsData = np.empty((0, 
+            4 + len(Classification.classStr(self.classification))), float)
         with os.scandir(self.directory) as i:
             for image in i:
                 if image.is_file():
@@ -266,6 +267,20 @@ class Load(CNN):
         return totalAmountOfImages
 
     def generateReport(self):
+        if (len(Classification.classStr(self.classification)) == 2):
+            self.__binaryReport()
+        elif (len(Classification.classStr(self.classification)) == 3):
+            self.__multiClassReport()
+        else:
+            print("ERROR: incorrect number of classification classes")
+            sys.exit(1)
+    # endregion
+
+    ########################################################################
+    # private methods
+    ########################################################################
+    # region
+    def __binaryReport(self):
         maxOfImages = int(max(self.resultsData[:, 0])) + 1
         minOfImages = int(min(self.resultsData[:, 0]))
         # sort on image value number
@@ -291,12 +306,35 @@ class Load(CNN):
             # save the log file
             np.savetxt(self.outDirectory + str(x) + ".txt",
                        temp[:][:], fmt="%s")
-    # endregion
 
-    ########################################################################
-    # private methods
-    ########################################################################
-    # region
+    def __multiClassReport(self):
+        maxOfImages = int(max(self.resultsData[:, 0])) + 1
+        minOfImages = int(min(self.resultsData[:, 0]))
+        # sort on image value number
+        self.resultsData = self.resultsData[self.resultsData[:, 0].
+                                            argsort()]
+        # i is the global counter which counts through all positions
+        i = 0
+        for x in range(minOfImages, maxOfImages):
+            temp = np.empty((0, 6), float)
+            while int(self.resultsData[i][0]) == x:
+                temp = np.append(temp,
+                                 np.array([[self.resultsData[i][1],
+                                            self.resultsData[i][2],
+                                            self.resultsData[i][3],
+                                            self.resultsData[i][4],
+                                            self.resultsData[i][5],
+                                            self.resultsData[i][6],
+                                            ]]), axis=0)
+                i += 1
+                if i >= len(self.resultsData):
+                    break
+            # sort on middle snp
+            temp = temp[temp[:, 2].argsort()]
+            # save the log file
+            np.savetxt(self.outDirectory + str(x) + ".txt",
+                       temp[:][:], fmt="%s")
+
     def __performPrediction(self, imageName):
         img = tf.keras.preprocessing.image.load_img(
             self.directory + imageName,
@@ -313,8 +351,7 @@ class Load(CNN):
         with tf.device(self.useDevice):
             predictions = self.loadedModel.predict(img_array)
         score = predictions[0]
-        scoreNeutral = score[0]
-        scoreSelected = score[1]
+
         startPos = imageName.rfind(".n_")
         midPos1 = imageName.rfind(".w_start_")
         midPos2 = imageName.rfind(".w_end_")
@@ -322,14 +359,35 @@ class Load(CNN):
         firstSNP = float(imageName[midPos1 + len(".w_start_"):midPos2])
         lastSNP = float(imageName[midPos2 + len(".w_end_"):endPos])
         middleSNP = (firstSNP + lastSNP) / 2
-        self.resultsData = np.append(self.resultsData,
-                                     np.array([[float(imageName
-                                                      [startPos +
-                                                       len(".n_"):
-                                                       midPos1]),
-                                                firstSNP, lastSNP,
-                                                middleSNP,
-                                                float(scoreNeutral),
-                                                float(scoreSelected)]]),
-                                     axis=0)
+        # print(Classification.classStr(self.classification))
+        # write output when using 
+        if (len(Classification.classStr(self.classification)) == 2):
+            scoreNeutral = score[0]
+            scoreSelected = score[1]
+            self.resultsData = np.append(self.resultsData,
+                                        np.array([[float(imageName
+                                                        [startPos +
+                                                        len(".n_"):
+                                                        midPos1]),
+                                                    firstSNP, lastSNP,
+                                                    middleSNP,
+                                                    float(scoreNeutral),
+                                                    float(scoreSelected)]]),
+                                        axis=0)
+        
+        if (len(Classification.classStr(self.classification)) == 3):
+            scoreNeutral = score[0]
+            scoreHard = score[1]
+            scoreSoft = score[2]
+            self.resultsData = np.append(self.resultsData,
+                                        np.array([[float(imageName
+                                                        [startPos +
+                                                        len(".n_"):
+                                                        midPos1]),
+                                                    firstSNP, lastSNP,
+                                                    middleSNP,
+                                                    float(scoreNeutral),
+                                                    float(scoreHard),
+                                                    float(scoreSoft)]]),
+                                        axis=0)
     # endregion

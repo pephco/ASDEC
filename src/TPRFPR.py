@@ -3,8 +3,8 @@
 # File:			    TPRFPR.py
 # Organization:		University of twente
 # Group:		    CAES
-# Date:			    05-03-2021
-# Version:		  	0.1.0
+# Date:			    18-12-2021
+# Version:		  	0.2.0
 # Author:		    Matthijs Souilljee, s2211246
 # Education:	  	EMSYS msc.
 ############################################################################
@@ -20,6 +20,9 @@ import getopt
 import numpy as np
 import os
 
+from logic.datatypes import Classification
+from logic.errorHandling import ErrorHandling
+from logic import logo
 from logic import str2bool
 # endregion
 
@@ -30,6 +33,7 @@ from logic import str2bool
 
 
 def HelpPrinterTPRFPR():
+    logo.logo()
     print("simple program that generates a true positive rate (TPR)" +
           "based on a given false positive rate (FPR)\n")
     print("TPRFPR.py -n <neutral> -s <selected> -f <FPR> -o <out> -r <run>" +
@@ -42,6 +46,9 @@ def HelpPrinterTPRFPR():
     print("\t -r: do a complete run of all FPR from 0 to 1 with steps of 0.05")
     print("\t -d: all files in a folder please use predifend nameing format" +
           " form LoadCNN.py for this")
+    print("\t--NS: binary classification of neutral and soft sweep")
+    print("\t--NHS: multi-class classification of neutral, hard sweep and soft sweep")
+    print("\t--NH: binary classification of neutral and hard sweep")
 
 ############################################################################
 # Function convert the txt file to a numpy array which could be plotted
@@ -78,7 +85,7 @@ def LogFile2Array(textFileName):
 # Function get the TPR based on a given fpr
 ############################################################################
 
-def CalculateTPR(neutralData, selectiveData, FPR):
+def CalculateTPRBinary(neutralData, selectiveData, FPR):
     # make a sorted lost of the neutral data and selective data
     # sorted is from small to large value according to the probability
     # of selective.
@@ -89,21 +96,12 @@ def CalculateTPR(neutralData, selectiveData, FPR):
     # position 0
     neutralData = np.flip(neutralData, 0)
     selectiveData = np.flip(selectiveData, 0)
-    # print("neutral Data")
-    # print(neutralData)
-    # print("selective Data")
-    # print(selectiveData)
 
     # find the index based on the fpr
     fprIndex = round((len(neutralData) - 1) * float(FPR))
-    # print("index of fpr")
-    # print(fprIndex)
 
     # find the value corresponding to the fpr based on the index
     fprProbSelec = neutralData[fprIndex, 4]
-    # print("prob of selective")
-    # print(fprProbSelec)
-    # print("find tpr")
 
     # TPR set to zero, because if not changed all points are below
     index = 0
@@ -114,10 +112,6 @@ def CalculateTPR(neutralData, selectiveData, FPR):
             TPR = index / (len(selectiveData))
             break
         index += 1
-
-    # print and return the final result
-    # print("TPR found:")
-    # print(TPR)
     return fprProbSelec, TPR
 
 
@@ -147,7 +141,7 @@ def Folder(summarySelective, summaryNeutral, FPR):
                                         compPathNeu)
                                     selectiveData = LogFile2Array(
                                         compPathSel)
-                                    fprProbSelec, TPR = CalculateTPR(
+                                    fprProbSelec, TPR = CalculateTPRBinary(
                                         neutralData, selectiveData, FPR)
                                     tempData = np.append(tempData,
                                                          np.array([[compPathSel,
@@ -169,7 +163,7 @@ def Single(summarySelective, summaryNeutral, FPR):
     ########################################################################
     # now calculate the TPR
     ########################################################################
-    fprProbSelec, TPR = CalculateTPR(neutralData, selectiveData, FPR)
+    fprProbSelec, TPR = CalculateTPRBinary(neutralData, selectiveData, FPR)
     ########################################################################
     # append to the results
     ########################################################################
@@ -207,6 +201,7 @@ def main(argv):
     outputPath = ''
     fullRun = False
     folderMode = False
+    classification = Classification.NULL
 
     ########################################################################
     # get all the arguments from the commandline
@@ -215,7 +210,8 @@ def main(argv):
         opts, ars = getopt.getopt(argv, "hn:s:f:d:o:r:",
                                         ["neutral=", "selective=",
                                          "fpr=", "folder=",
-                                         "out=", 'run='])
+                                         "out=", 'run=',
+                                         "NS", "NH", "NHS"])
     except getoptError:
         HelpPrinterTPRFPR()
         sys.exit(2)
@@ -235,17 +231,27 @@ def main(argv):
             folderMode = str2bool.str2bool(arg)
         elif opt in ("-r", "--run"):
             fullRun = str2bool.str2bool(arg)
+        elif opt in ("--NS"):
+            ErrorHandling.ClassificationCheck(classification)
+            classification = Classification.NS
+        elif opt in ("--NH"):
+            ErrorHandling.ClassificationCheck(classification)
+            classification = Classification.NH
+        elif opt in ("--NHS"):
+            ErrorHandling.ClassificationCheck(classification)
+            classification = Classification.NHS
 
     ########################################################################
     # check if all arguments are filled in
     ########################################################################
-    if (len(summaryNeutral) == 0 or len(summarySelective) == 0 or
-            len(FPR) == 0 or len(outputPath) == 0):
-        HelpPrinterTPRFPR()
-        print("ERROR: Not all fields are filled in correctly")
-        sys.exit(2)
-
+    ErrorHandling.FieldFilledInCheck([summaryNeutral, summarySelective,
+                                      FPR, outputPath])
+    ErrorHandling.ClassificationSelected(classification)
     print("Calculating TPR based on a FPR of " + str(FPR))
+
+    if (classification == Classification.NHS):
+        print("Not supported")
+        return
 
     #########################################################################
     # get the summary data from the file

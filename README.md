@@ -5,9 +5,9 @@ Authors: Matthijs Souilljee (matthijs.souilljee@gmail.com) and Nikolaos Alachiot
 
 First release: 31/07/2021
 
-Last update: 23/09/2021
+Last update: 09/12/2021
 
-Version: 1.1
+Version: 1.2
 
 # ABOUT
 -----
@@ -17,6 +17,11 @@ ASDEC (Accurate Sweep Detection Enabled by a CNN) is a stand-alone software impl
 The current ASDEC release can process SNP data in Hudson's ms, VCF (Variant Call Format) file formats or FASTA using [RAiSD](https://github.com/pephco/RAiSD/) for parsing to vcf first. The given basic run example is in Hudson's ms format. For the VCF format, refer to the respective Wikipedia entry (https://en.wikipedia.org/wiki/Variant_Call_Format).
 
 Concerning the handling strategy of missing data the same strategy as deployed by [RAiSD](https://github.com/pephco/RAiSD/) is used. 
+
+ASDEC supports three different types of classification problems:
+- neutral, hard selective sweep					[neutral, hard]
+- neutral, soft selective sweep					[neutral, soft]
+- neutral, hard selective sweep, soft selective sweep		[neutral, hard, soft]
 
 # Supported file formats
 -----
@@ -43,8 +48,16 @@ cd ASDEC/
 
 ### Installation dependencies
 Use the package manager to install [tensorflow](https://www.tensorflow.org/), [keras](https://keras.io/), and following the install instructions of TensorFlow 2 and Keras. Besides python3 also python3-dev and python3-venv should be installed on the machine. Different bash files are used for automation tested version: GNU bash, version 5.0.17(1)-release (x86_64-pc-linux-gnu).
+Following Linux packages are required:
+```bash
+sudo apt update
+sudo apt install python3-pip #(version 20.0.2)
+sudo apt install unzip	#(version 6.00)
+```
 Install the following pip packages for python3 may require pip3 instead of pip:
 ```bash
+pip3 install testresources==2.0.1
+pip3 install protobuf==3.9.2
 pip3 install tensorflow==2.4.1
 pip3 install keras==2.4.3
 pip3 install numpy==1.19.5
@@ -115,12 +128,14 @@ python3 src/TrainCNN.py -h
 ```
 Only the parameters that differ should be added otherwise the def value is taken.
 ```bash
-python3 src/TrainCNN.py -a 1 -b 10 -c 1 -d 10 -e 10 -p models/TESTMODEL -o 3 --CPU
+python3 src/TrainCNN.py -a 1 -b 10 -c 1 -d 10 -e 10 -p models/TESTMODEL -o 3 --CPU --NH
 ```
 Here we start with data-set 1 till and including 10 for both ms and mssel (given by the values of parameters: a, b, c, and d).
 Next, we use -e to tell ASDEC to create 10 populations per file -p gives us the location and name of the model, and lastly -o gives us the number of training epochs.
 All other parameters can be left to their default value including -q which now uses the SweepNet CNN design/architecture.
 Check out the 'models/TESTMODEL' directory for your model.
+
+When training a model the correct classification type should be defined (NH, NS, or NHS) this information is saved within the model for inference. The data generation only supports the classification type NH (neutral and hard selective sweep).
 
 **output:** 
 ```bash 
@@ -165,11 +180,11 @@ The other files in the info folder are self-explanatory.
 Go to the root of the ASDEC repository.
 Lastly to calculate the success rate, distance error:
 ```bash
-python3 tools/accuracy.py -i archive/logTraj_TEST1_summary.txt -c 500000 -r 10000 -o archive/results/acc.txt -f false -p 0
+python3 src/accuracy.py -i archive/logTraj_TEST1_summary.txt -c 500000 -r 10000 -o archive/results/acc.txt -f false -p 0
 ```
 For more information run:
 ```bash
-python3 tools/accuracy.py -h
+python3 src/accuracy.py -h
 ```
 **output:** 
 ```bash
@@ -177,11 +192,11 @@ the accuracy files: Path to file to score, raw distance, amount of entries corre
 ```
 And to calculate the TPR with a given 5% FPR value:
 ```bash
-python3 tools/TPRFPR.py -n archive/logTraj_BASE1_summary.txt -s archive/logTraj_TEST1_summary.txt -f 0.05 -o archive/results/tprfpr.txt -r false -d false
+python3 src/TPRFPR.py -n archive/logTraj_BASE1_summary.txt -s archive/logTraj_TEST1_summary.txt -f 0.05 -o archive/results/tprfpr.txt -r false -d false
 ```
 For more information run:
 ```bash
-python3 tools/TPRFPR.py -h
+python3 src/TPRFPR.py -h
 ```
 **output:**  
 ```bash
@@ -241,5 +256,6 @@ Where the -q parameters tell ASDEC to use your model design.
 Changelog
 ----------
 
-	v1.0 (31/07/2021): first release
+	v1.0 (31/07/2021): Initial release
 	V1.1 (23/09/2021): CPU and GPU update
+	V1.2 (09/12/2021): Added new classification handling

@@ -3,8 +3,8 @@
 # File:			TrainCNN.py
 # Organization:	University of twente
 # Group:		CAES
-# Date:			31-07-2021
-# Version:		1.0.0
+# Date:			15-10-2021
+# Version:		2.0.0
 # Author:		Matthijs Souilljee, s2211246
 # Education:	EMSYS msc.
 ############################################################################
@@ -29,13 +29,15 @@ import re
 from subprocess import Popen, PIPE
 
 # import my own files
+from logic.datatypes import Hardware
+from logic.datatypes import Classification
+from logic.errorHandling import ErrorHandling
 import callerBitmap
 import callerTrainCNN
 from logic import randomGenerator
 from logic import str2bool
 from logic import logo
 # endregion
-
 
 def HelpPrinterTrain():
     logo.logo()
@@ -79,6 +81,15 @@ def HelpPrinterTrain():
     print("\t-p: output path + model name (string) (def: tempModel)")
     print("\t\t--force: save even if model is already present (bool) (def: false)")
     print("\n")
+    print("Classification type settings (select one):")
+    print("\t--NS: binary classification of neutral and soft sweep")
+    print("\t--NHS: multi-class classification of neutral, hard sweep and soft sweep")
+    print("\t--NH: binary classification of neutral and hard sweep")
+    print("\n")
+    print("Hardware to use (select one)")
+    print("\t--GPU: use GPU for training")
+    print("\t--CPU: use CPU for training")
+    print("\n")
     print("Advanced settings !Please use with caution!:")
     print("Two advanced options are available -q considers model designs.")
     print("These designs are located in the /src/models folder please do not")
@@ -96,8 +107,6 @@ def HelpPrinterTrain():
     print("General settings:")
     print("\t-r: Perform cleanup (bool) (def: true)")
     print("\t-z: Amount of threads used (int) (def: 5)")
-    print("\t--GPU: use GPU for training")
-    print("\t--CPU: use CPU for training")
     print("\n")
     print("Extra training settings:")
     print("These specify a maximal loss and mininal acc, used for rapid")
@@ -109,7 +118,7 @@ def HelpPrinterTrain():
     print("VCF parsing settings:")
     print("\t-x: parsing vcf file memory consumption (input * 2) (float) (def: 10)")
     print("\t-X: total chromosome length (float) (def 100000)")
-    
+    print("\n")
 
 
 def main(argv):
@@ -144,8 +153,8 @@ def main(argv):
     rawFilesPath = ''
     force = False
     threads = '5'
-    CPU = False
-    GPU = False
+    hardware = Hardware.NULL
+    classification = Classification.NULL
     # extra training settings
     minAcc = 0
     maxLoss = sys.float_info.max
@@ -160,7 +169,7 @@ def main(argv):
     try:
         opts, ars = getopt.getopt(argv,
                                   "ha:b:c:d:e:f:g:i:j:k:l:m:n:o:p:q:r:t:u:v:w:y:x:X:z:",
-                                  ["force", "GPU", "CPU"])
+                                  ["force", "GPU", "CPU", "NS", "NH", "NHS"])
     except getoptError:
         HelpPrinterTrain()
         sys.exit(2)
@@ -221,9 +230,20 @@ def main(argv):
         elif opt in ("--force"):
             force = True
         elif opt in ("--CPU"):
-            CPU = True
+            ErrorHandling.HardwareCheck(hardware)
+            hardware = Hardware.CPU
         elif opt in ("--GPU"):
-            GPU = True
+            ErrorHandling.HardwareCheck(hardware)
+            hardware = Hardware.GPU
+        elif opt in ("--NS"):
+            ErrorHandling.ClassificationCheck(classification)
+            classification = Classification.NS
+        elif opt in ("--NH"):
+            ErrorHandling.ClassificationCheck(classification)
+            classification = Classification.NH
+        elif opt in ("--NHS"):
+            ErrorHandling.ClassificationCheck(classification)
+            classification = Classification.NHS
     
     ########################################################################
     # check if some options are filled in
@@ -231,44 +251,14 @@ def main(argv):
     startTime = time.time()
     ########################################################################
     # check if there is enough data to perform the inference
-    if (((int(startMs) == 0 and int(endMs) == 0 and int(startMssel) == 0
-        and int(endMssel) == 0 and len(rawFilesPath) == 0) or 
-        (int(startMs) > int(endMs) or int(startMssel) > int(endMssel))) and 
-        len(rawFilesPath) == 0):
-        HelpPrinterTrain()
-        print("ERROR: Not enough data to train a model")
-        sys.exit(1)
-    
-    if (triesCount < 1):
-        print("ERROR: Count should atleast be 1")
-        sys.exit(1)
-        
-    if (int(threads) < 1):
-        print("ERROR: threads can not be zero or smaller then zero")
-        sys.exit(1)
-        
-    # and check if model already exists, have to force overwrite
-    if (os.path.exists(model) and not force):
-        print("ERROR: Model already present and no overwrite flag is provided")
-        print("If overwrite is desired add --force flag")
-        sys.exit(1)
-        
-    # check if the trajectory folder exists before running the code
-    if (int(startMssel) > 0):
-        if (not os.path.exists("trajectory_files/")):
-            print("ERROR: no folder called trajectory files, please")
-            print("run: ./tools/setupTrajectoryFiles.sh")
-            sys.exit(1)
-    
-    # Check hardware selection
-    if (CPU and GPU == False):
-        inputLineTraining = "--CPU"
-    elif (CPU == False and GPU):
-        inputLineTraining = "--GPU"
-    else:
-        print("ERROR: Selected none or multiple hardware settings")
-        print("only use one --GPU or --CPU")
-        sys.exit(1)
+    ErrorHandling.InputDataCheck(startMs, endMs, startMssel, endMssel, rawFilesPath)
+    ErrorHandling.TryCountCheck(triesCount)
+    ErrorHandling.ThreadNumberCheck(threads)
+    ErrorHandling.ModelExistsCheckForce(model, force)    
+    if(len(rawFilesPath) == 0):
+        ErrorHandling.TrajectoryExistsFolderCheck()
+    ErrorHandling.ClassificationSelected(classification)
+    ErrorHandling.HardwareSelected(hardware)    
     ########################################################################
     # run all the scripts and python code
     # setup the file structure
@@ -283,9 +273,11 @@ def main(argv):
                                 ' -d out '))
 
     # call the cleaning script
-    subprocess.call(shlex.split(
-        './src/scripts/cleanCompleteTrain.sh' +
-        ' -d ' + str(folderName)))
+    for className in Classification.classStr(classification):
+        subprocess.call(shlex.split(
+            './src/scripts/cleanCompleteTrain.sh' +
+            ' -i ' + str(className) +
+            ' -d ' + str(folderName)))
     ########################################################################
     # If no raw files are already given generate them
     ### time ###
@@ -311,84 +303,68 @@ def main(argv):
     timeDataGeneration = time.time() - startTime
     startTime = time.time()
     ########################################################################
-    filesToRunNeutral = []
-    filesToRunSelection = []
+    filesToRun = []
+    classesFound = []
     processes = []
-    # generate neutral images
-    print("Start conversion for the neutral files to bitmaps")
+    print("Start conversion to bitmaps")
     # explore the folder for all files to run
-    with os.scandir(str(rawFilesPath) + "/neutral/") as folder:
-        for textFile in folder:
-            if textFile.is_file():
-                filesToRunNeutral.append(str(textFile.path))
-    with os.scandir(str(rawFilesPath) + "/selection/") as folder:
-        for textFile in folder:
-            if textFile.is_file():
-                filesToRunSelection.append(str(textFile.path))
-    baseIndex = 0
-    testIndex = 0
-    startedIndex = 0
-    for files in filesToRunNeutral:
-        startedIndex += 1
-        p = subprocess.Popen("python3 src/callerBitmap.py" + ' -i ' + files +
-                           ' -o ' + str(folderName) +
-                           '/img/neutral/BASE_IMAGES' + str(baseIndex) + "_" +
-                           ' -w ' + str(windowEnb) +
-                           ' -l ' + str(windowLength) +
-                           ' -s ' + str(stepSize) +
-                           ' -c ' + str(centerEnb) +
-                           ' -z ' + str(centerRange) +
-                           ' -m ' + str(multiplication) +
-                           ' -p ' + str(extractionPoint) +
-                           ' -x ' + str(memorySize) 
-                           , stdout=subprocess.PIPE, shell=True)
-        processes.append(p)
-        if int(threads) <= startedIndex:
-            startedIndex = 0
-            for p in processes:
-                if p.wait() != 0:
-                    print("ERROR: There was an error in thread timing")
-        baseIndex += 1
-    if (baseIndex == 0):
-        print("WARNING: No txt files found do you have the subfolder neutral under the given path")
-                
-    for files in filesToRunSelection:
-        startedIndex += 1
-        p = subprocess.Popen("python3 src/callerBitmap.py" + ' -i ' + files +
-                           ' -o ' + str(folderName) +
-                           '/img/selection/TEST_IMAGES' + str(testIndex) + "_" +
-                           ' -w ' + str(windowEnb) +
-                           ' -l ' + str(windowLength) +
-                           ' -s ' + str(stepSize) +
-                           ' -c ' + str(centerEnb) +
-                           ' -z ' + str(centerRange) +
-                           ' -m ' + str(multiplication) +
-                           ' -p ' + str(extractionPoint) +
-                           ' -x ' + str(memorySize)
-                           , stdout=subprocess.PIPE, shell=True)
-        processes.append(p)
-        if int(threads) <= startedIndex:
-            startedIndex = 0
-            for p in processes:
-                if p.wait() != 0:
-                    print("ERROR: There was an error in thread timing")
-        testIndex += 1
-    if (testIndex == 0):
-        print("WARNING: No txt files found do you have the subfolder selection under the given path")
-     
-    for p in processes:
-        if p.wait() != 0:
-            print("There was an error")
+    with os.scandir(str(rawFilesPath)) as folder:
+        for subfolder in folder:
+            tempFiles = []
+            if subfolder.is_dir():
+                classesFound.append(str(subfolder.name))
+                with os.scandir(str(subfolder.path)) as content:
+                    for file in content:
+                        if file.is_file():
+                            tempFiles.append(str(file.path))
+            filesToRun.append(tempFiles)
+    ErrorHandling.ClassesCheck(classesFound, Classification.classStr(classification))
+    classIndex = 0
+    for folders in filesToRun:
+        startedIndex = 0
+        for files in folders:
+            startedIndex += 1
+            p = subprocess.Popen("python3 src/callerBitmap.py" + ' -i ' + files +
+                            ' -o ' + str(folderName) +
+                            '/img/' + Classification.classStr(classification)[classIndex] + '/img' + str(startedIndex) + "_" +
+                            ' -w ' + str(windowEnb) +
+                            ' -l ' + str(windowLength) +
+                            ' -s ' + str(stepSize) +
+                            ' -c ' + str(centerEnb) +
+                            ' -z ' + str(centerRange) +
+                            ' -m ' + str(multiplication) +
+                            ' -p ' + str(extractionPoint) +
+                            ' -x ' + str(memorySize) 
+                            , stdout=subprocess.PIPE, shell=True)
+            processes.append(p)
+            if int(threads) <= startedIndex:
+                startedIndex = 0
+                for p in processes:
+                    if p.wait() != 0:
+                        print("ERROR: There was an error in thread timing")
+        if (len(folders) == 0):
+            print("ERROR: No txt files found do in " + str(folders))
+            sys.exit(1)
+        classIndex += 1
+              
     # open a single file to get the number of individuals
-    if (len(filesToRunNeutral) > 0):
-        getIndividuals = filesToRunNeutral[0]
-    elif (len(filesToRunSelection) > 0):
-        getIndividuals = filesToRunSelection[0]
-    else:
+    getIndividuals = ""
+    for folders in filesToRun:
+        for files in folders:
+            if (len(files) != 0):
+                getIndividuals = files
+                break
+        if (len(getIndividuals) != 0):
+            break
+
+    if (len(getIndividuals) == 0):
         getIndividuals = ""
         print("ERROR: No files found")
         sys.exit(1)
     
+    # conversion from vcf files to ms files is done in the bitmap converter
+    # meaning that when a vcf file is found there always exists a vcf.ms variant
+    # of the same file.
     if getIndividuals.endswith(".vcf"):
         getIndividuals = getIndividuals + ".ms"
     msFile = open(getIndividuals, 'r')
@@ -416,7 +392,8 @@ def main(argv):
                              '-x' + str(windowLength),
                              '-a' + str(design),
                              '-t' + str(threads),
-                             inputLineTraining])
+                             Hardware.fromStr(hardware),
+                             Classification.fromStr(classification)])
         # check the acc
         openfile = open(str(model) + "/TrainResultsAcc.txt", 'r')
         for lineIndex, line in enumerate(openfile):
@@ -490,14 +467,14 @@ def main(argv):
             print("-z " + str(threads))
             if force:
                 print("--force")
-            if CPU:
-                print("--CPU")
-            if GPU:
-                print("--GPU")
+            print(Hardware.fromStr(hardware))
+            print(Classification.fromStr(classification))
 
     totalTime = (timeInitialSetup + timeDataGeneration + timeImageGeneration
                  + timeTrain + timeCleanUp)
 
+    ########################################################################
+    # Save the commandline arguments used for generation
     with open((model + "/TimingResults.txt"), 'w') as f:
         with redirect_stdout(f):
             print("Time summary in seconds\n")
